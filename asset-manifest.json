@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/ion-pwa/static/css/main.073c9b0a.css",
+    "main.js": "/ion-pwa/static/js/main.3cfecfd1.js",
+    "static/js/787.bde805fb.chunk.js": "/ion-pwa/static/js/787.bde805fb.chunk.js",
+    "service-worker.js": "/ion-pwa/service-worker.js",
+    "static/media/logo.svg": "/ion-pwa/static/media/logo.103b5fa18196d5665a7e12318285c916.svg",
+    "index.html": "/ion-pwa/index.html",
+    "main.073c9b0a.css.map": "/ion-pwa/static/css/main.073c9b0a.css.map",
+    "main.3cfecfd1.js.map": "/ion-pwa/static/js/main.3cfecfd1.js.map",
+    "787.bde805fb.chunk.js.map": "/ion-pwa/static/js/787.bde805fb.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.073c9b0a.css",
+    "static/js/main.3cfecfd1.js"
+  ]
+}
