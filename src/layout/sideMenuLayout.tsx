@@ -78,7 +78,7 @@ export const SideMenuLayout = () => {
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
       <AppBar position="fixed" open={open}>
-        <Toolbar style={{minHeight: '40px'}}>
+        <Toolbar sx={{minHeight: '40px'}}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
@@ -114,8 +114,8 @@ export const SideMenuLayout = () => {
         <Divider />
         <SideMenu />
       </Drawer>
-      <Main open={open} onClick={handleDrawerClose} style={{height: '100vh'}}>
-        <DrawerHeader style={{minHeight: '40px'}} />
+      <Main open={open} onClick={handleDrawerClose} sx={{height: '100vh'}}>
+        <DrawerHeader sx={{minHeight: '40px'}} />
         <Outlet />
       </Main>
     </Box>
