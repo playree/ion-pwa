@@ -1,11 +1,10 @@
-import List from '@material-ui/core/List';
-import Divider from '@material-ui/core/Divider';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
-import IconHome from '@material-ui/icons/Home';
-import IconPerson from '@material-ui/icons/Person'
-import IconSettings from '@material-ui/icons/Settings'
+import { List, Divider, ListItem, ListItemIcon, ListItemText } from '@mui/material';
+import { 
+  Home as IconHome, 
+  Person as IconPerson, 
+  Settings as IconSettings 
+} from '@mui/icons-material'
+
 import { NavLink } from 'react-router-dom';
 
 export const SideMenu = () => {
