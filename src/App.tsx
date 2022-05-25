@@ -5,6 +5,7 @@ import './App.css';
 import { SideMenuLayout } from './layout/sideMenuLayout';
 import { PageTop } from './pages/top';
 import { PageDid } from './pages/did'
+import { PageSettings } from './pages/settings'
 
 function App() {
   return <BrowserRouter>
@@ -12,6 +13,8 @@ function App() {
       <Route element={<SideMenuLayout />}>
         <Route index element={<PageTop />} />
         <Route path='did' element={<PageDid />} />
+
+        <Route path='settings' element={<PageSettings />} />
       </Route>
     </Routes>
   </BrowserRouter>;
