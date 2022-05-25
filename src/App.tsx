@@ -1,31 +1,24 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import logo from './logo.svg';
 import './App.css';
+import { SideMenuLayout } from './layout/sideMenuLayout';
+import { PageTop } from './pages/top';
+import { PageDid } from './pages/did'
 
 function App() {
-  const buttonAlert = () => {
-    alert('Clicked!');
-  }
-
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-        <button onClick={buttonAlert}>Click me</button>
-      </header>
-    </div>
-  );
+  return <BrowserRouter>
+    <Routes>
+      <Route element={<SideMenuLayout />}>
+        <Route index element={<PageTop />} />
+        <Route path='did' element={<PageDid />} />
+      </Route>
+    </Routes>
+  </BrowserRouter>;
+  // return <PersistentDrawerLeft
+  //   menu={<Sidemenu/>}
+  //   main={<PageTop/>}
+  // />;
 }
 
 export default App;
