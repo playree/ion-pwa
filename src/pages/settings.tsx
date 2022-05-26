@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Typography, Container, Grid, Button, TextField, Snackbar, Alert } from '@mui/material';
 import { Save as IconSave } from '@mui/icons-material'
 
-import { dexieDb, SettingsModel } from '../dexie'
+import { Settings } from '../helpers/settings';
 
 export const PageSettings = () => {
   const [open, setOpen] = React.useState(false);
@@ -29,27 +29,18 @@ export const PageSettings = () => {
 
   const saveSettings = async () => {
     // 設定の保存
-    let _ionNodeUrl = await dexieDb.settings.get(SettingsModel.KEYS.ION_NODE_URL);
-    if (_ionNodeUrl) {
-      _ionNodeUrl.value = ionNodeUrl;
-      await dexieDb.settings.update(_ionNodeUrl.key, _ionNodeUrl)
-    } else {
-      _ionNodeUrl = new SettingsModel(SettingsModel.KEYS.ION_NODE_URL, ionNodeUrl);
-      await dexieDb.settings.add(_ionNodeUrl)
-    }
+    const settings = new Settings();
+    settings.ionNodeUrl = ionNodeUrl;
+    await settings.save();
     
     handleOpen();
   };
 
   React.useEffect(() => {
     // 設定の読み込み
-    dexieDb.settings.get(SettingsModel.KEYS.ION_NODE_URL).then((obj) => {
-      if (obj) {
-        setIonNodeUrl(obj.value);
-      } else {
-        setIonNodeUrl('https://beta.ion.msidentity.com/api/v1.0/');
-      }
-    })
+    new Settings().load().then((settings) => {
+      setIonNodeUrl(settings.ionNodeUrl);
+    });
   },[])
 
   return (
