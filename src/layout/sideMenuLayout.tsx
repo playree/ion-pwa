@@ -1,15 +1,18 @@
 import * as React from 'react';
 import { Outlet } from 'react-router-dom'
 import { styled, useTheme } from '@mui/material/styles';
-import { Box, Drawer, CssBaseline, Toolbar, Typography, Divider, IconButton } from '@mui/material';
+import { Box, Drawer, CssBaseline, Toolbar, Typography, Divider, IconButton, 
+  List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import { 
   Menu as IconMenu,
   ChevronLeft as IconChevronLeft,
-  ChevronRight as IconChevronRight
+  ChevronRight as IconChevronRight,
+  Home as IconHome, 
+  Person as IconPerson, 
+  Settings as IconSettings 
 } from '@mui/icons-material';
-
-import { SideMenu } from './sideMenu';
+import { NavLink } from 'react-router-dom';
 
 const drawerWidth = 200;
 
@@ -62,6 +65,12 @@ const DrawerHeader = styled('div')(({ theme }) => ({
   justifyContent: 'flex-end',
 }));
 
+const menulink = {
+  textDecorationLine: 'none',
+  color: '#444',
+  fontWeight: 'bold'
+}
+
 export const SideMenuLayout = () => {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
@@ -112,9 +121,33 @@ export const SideMenuLayout = () => {
           </IconButton>
         </DrawerHeader>
         <Divider />
-        <SideMenu />
+
+        <List>
+          <NavLink to='/' style={menulink} onClick={handleDrawerClose}>
+            <ListItem button>
+              <ListItemIcon sx={{minWidth: '40px'}}><IconHome /></ListItemIcon>
+              <ListItemText primary='Top' />
+            </ListItem>
+          </NavLink>
+          <NavLink to='/did/' style={menulink} onClick={handleDrawerClose}>
+            <ListItem button>
+              <ListItemIcon sx={{minWidth: '40px'}}><IconPerson /></ListItemIcon>
+              <ListItemText primary='DID' />
+            </ListItem>
+          </NavLink>
+        </List>
+        <Divider />
+        <List>
+          <NavLink to='/settings/' style={menulink} onClick={handleDrawerClose}>
+            <ListItem button>
+              <ListItemIcon sx={{minWidth: '40px'}}><IconSettings /></ListItemIcon>
+              <ListItemText primary='Settings' />
+            </ListItem>
+          </NavLink>
+        </List>
+
       </Drawer>
-      <Main open={open} onClick={handleDrawerClose} sx={{height: '100vh'}}>
+      <Main onClick={handleDrawerClose} sx={{height: '100vh'}}>
         <DrawerHeader sx={{minHeight: '40px'}} />
         <Outlet />
       </Main>
