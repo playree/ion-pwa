@@ -19,13 +19,13 @@ export const SideMenu = () => {
       <List>
         <NavLink to='/' style={menulink}>
           <ListItem button>
-            <ListItemIcon><IconHome /></ListItemIcon>
+            <ListItemIcon sx={{minWidth: '40px'}}><IconHome /></ListItemIcon>
             <ListItemText primary='Top' />
           </ListItem>
         </NavLink>
         <NavLink to='/did/' style={menulink}>
           <ListItem button>
-            <ListItemIcon><IconPerson /></ListItemIcon>
+            <ListItemIcon sx={{minWidth: '40px'}}><IconPerson /></ListItemIcon>
             <ListItemText primary='DID' />
           </ListItem>
         </NavLink>
@@ -34,7 +34,7 @@ export const SideMenu = () => {
       <List>
         <NavLink to='/settings/' style={menulink}>
           <ListItem button>
-            <ListItemIcon><IconSettings /></ListItemIcon>
+            <ListItemIcon sx={{minWidth: '40px'}}><IconSettings /></ListItemIcon>
             <ListItemText primary='Settings' />
           </ListItem>
         </NavLink>

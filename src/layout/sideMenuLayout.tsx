@@ -11,7 +11,7 @@ import {
 
 import { SideMenu } from './sideMenu';
 
-const drawerWidth = 240;
+const drawerWidth = 200;
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
   open?: boolean;
