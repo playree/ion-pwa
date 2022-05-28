@@ -1,11 +1,5 @@
 import * as React from 'react';
-import { Typography, Container, Grid, Button, TextField, Snackbar, Alert} from '@mui/material';
-import { Create as IconCreate } from '@mui/icons-material'
-import { IonDid, IonDocumentModel, IonKey, IonRequest } from '@decentralized-identity/ion-sdk';
-import IonProofOfWork from 'ion-pow-sdk';
-
-import { Settings } from '../helpers/settings';
-import { DidTool } from '../helpers/didTools';
+import { Typography, Container, Grid, Snackbar, Alert} from '@mui/material';
 import { useNowLoadingContext } from '../layout/sideMenuLayout';
 
 export const PageDid = () => {
@@ -28,40 +22,6 @@ export const PageDid = () => {
 
   const nowLoading = useNowLoadingContext();
 
-  const registerDid = async () => {
-    nowLoading.setNowLoading(true);
-    
-    await DidTool.create();
-
-    setTimeout(() => {
-      nowLoading.setNowLoading(false);
-    }, 500);
-    // const [recoveryKey, recoveryPrivateKey] = await IonKey.generateEs256kOperationKeyPair();
-    // const [updateKey, updatePrivateKey] = await IonKey.generateEs256kOperationKeyPair();
-    // const [signingKey, signingPrivateKey] = await IonKey.generateEs256kDidDocumentKeyPair({id: 'signing-key'});
-    // const publicKeys = [signingKey];
-
-    // const document : IonDocumentModel = {
-    //   publicKeys
-    // };
-    // const input = { recoveryKey, updateKey, document };
-    // const createRequest = IonRequest.createCreateRequest(input);
-    // const longFormDid = IonDid.createLongFormDid(input);
-    // const shortFormDid = longFormDid.substring(0, longFormDid.lastIndexOf(':'));
-    // const didSuffix = shortFormDid.substring(shortFormDid.lastIndexOf(':') + 1);
-
-    // console.log(createRequest);
-
-    // const settings = new Settings();
-    // await settings.load();
-    // const resText = await IonProofOfWork.submitIonRequest(
-    //   settings.ionNodeUrl + 'proof-of-work-challenge',
-    //   settings.ionNodeUrl + 'operations',
-    //   JSON.stringify(createRequest)
-    // );
-    // const resObj = resText ? JSON.parse(resText) : null;
-    // console.log(resObj);
-  };
 
   return (
     <>
@@ -72,9 +32,6 @@ export const PageDid = () => {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             DIDが発行されていません。
-          </Grid>
-          <Grid container item xs={12} justifyContent='center'>
-            <Button variant='contained' size='large' startIcon={<IconCreate />} onClick={registerDid}>DID発行</Button>
           </Grid>
         </Grid>
       </Container>

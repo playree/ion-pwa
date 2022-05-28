@@ -14,6 +14,9 @@ import {
 } from '@mui/icons-material';
 import { NavLink } from 'react-router-dom';
 
+import { Settings } from '../helpers/settings';
+import { DidModel } from '../helpers/didTools';
+
 const drawerWidth = 200;
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
@@ -81,10 +84,32 @@ export const useNowLoadingContext = ():NowLoadingContextType => {
   return React.useContext<NowLoadingContextType>(NowLoadingContext);
 }
 
+// 設定のコンテキスト
+export type SettingsContextType = {
+  settings: Settings | null;
+  setSettings: (settings: Settings) => void;
+}
+const SettingsContext = React.createContext<SettingsContextType>({} as SettingsContextType);
+export const useSettingsContext = ():SettingsContextType => {
+  return React.useContext<SettingsContextType>(SettingsContext);
+}
+
+// DID情報のコンテキスト
+export type DidContextType = {
+  didModel: DidModel | null;
+  setDidModel: (didModel: DidModel) => void;
+}
+const DidContext = React.createContext<DidContextType>({} as DidContextType);
+export const useDidContext = ():DidContextType => {
+  return React.useContext<DidContextType>(DidContext);
+}
+
 export const SideMenuLayout = () => {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
   const [isNowLoading, setNowLoading] = React.useState(false);
+  const [settings, setSettings] = React.useState<Settings | null>(null);
+  const [didModel, setDidModel] = React.useState<DidModel | null>(null);
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -94,11 +119,9 @@ export const SideMenuLayout = () => {
     setOpen(false);
   };
 
-  // const setNowLoading = (isNowLoading: boolean) => {
-  //   setIsNowLoading(isNowLoading);
-  // }
-
   const nowLoadingValue: NowLoadingContextType = { isNowLoading, setNowLoading };
+  const settingsValue: SettingsContextType = { settings, setSettings };
+  const didValue: DidContextType = { didModel, setDidModel };
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -165,16 +188,20 @@ export const SideMenuLayout = () => {
 
       </Drawer>
       <NowLoadingContext.Provider value={nowLoadingValue}>
-        <Main onClick={handleDrawerClose} sx={{height: '100vh'}}>
-          <DrawerHeader sx={{minHeight: '40px'}} />
-          <Outlet />
-        </Main>
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={nowLoadingValue.isNowLoading}
-        >
-          <CircularProgress color="inherit" />
-        </Backdrop>
+        <SettingsContext.Provider value={settingsValue}>
+          <DidContext.Provider value={didValue}>
+            <Main onClick={handleDrawerClose} sx={{height: '100vh'}}>
+              <DrawerHeader sx={{minHeight: '40px'}} />
+              <Outlet />
+            </Main>
+            <Backdrop
+              sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+              open={nowLoadingValue.isNowLoading}
+            >
+              <CircularProgress color="inherit" />
+            </Backdrop>
+          </DidContext.Provider>
+        </SettingsContext.Provider>
       </NowLoadingContext.Provider>
     </Box>
   );
