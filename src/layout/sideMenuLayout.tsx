@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Outlet } from 'react-router-dom'
 import { styled, useTheme } from '@mui/material/styles';
 import { Box, Drawer, CssBaseline, Toolbar, Typography, Divider, IconButton, 
-  List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
+  List, ListItem, ListItemIcon, ListItemText, Backdrop, CircularProgress } from '@mui/material';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import { 
   Menu as IconMenu,
@@ -71,9 +71,20 @@ const menulink = {
   fontWeight: 'bold'
 }
 
+// ロード中表示のコンテキスト
+export type NowLoadingContextType = {
+  isNowLoading: boolean;
+  setNowLoading: (isNowLoading: boolean) => void;
+}
+const NowLoadingContext = React.createContext<NowLoadingContextType>({} as NowLoadingContextType);
+export const useNowLoadingContext = ():NowLoadingContextType => {
+  return React.useContext<NowLoadingContextType>(NowLoadingContext);
+}
+
 export const SideMenuLayout = () => {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
+  const [isNowLoading, setNowLoading] = React.useState(false);
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -82,6 +93,12 @@ export const SideMenuLayout = () => {
   const handleDrawerClose = () => {
     setOpen(false);
   };
+
+  // const setNowLoading = (isNowLoading: boolean) => {
+  //   setIsNowLoading(isNowLoading);
+  // }
+
+  const nowLoadingValue: NowLoadingContextType = { isNowLoading, setNowLoading };
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -147,10 +164,18 @@ export const SideMenuLayout = () => {
         </List>
 
       </Drawer>
-      <Main onClick={handleDrawerClose} sx={{height: '100vh'}}>
-        <DrawerHeader sx={{minHeight: '40px'}} />
-        <Outlet />
-      </Main>
+      <NowLoadingContext.Provider value={nowLoadingValue}>
+        <Main onClick={handleDrawerClose} sx={{height: '100vh'}}>
+          <DrawerHeader sx={{minHeight: '40px'}} />
+          <Outlet />
+        </Main>
+        <Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={nowLoadingValue.isNowLoading}
+        >
+          <CircularProgress color="inherit" />
+        </Backdrop>
+      </NowLoadingContext.Provider>
     </Box>
   );
 }

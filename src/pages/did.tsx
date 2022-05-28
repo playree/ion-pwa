@@ -6,6 +6,7 @@ import IonProofOfWork from 'ion-pow-sdk';
 
 import { Settings } from '../helpers/settings';
 import { DidTool } from '../helpers/didTools';
+import { useNowLoadingContext } from '../layout/sideMenuLayout';
 
 export const PageDid = () => {
   const [open, setOpen] = React.useState(false);
@@ -25,8 +26,16 @@ export const PageDid = () => {
     
   },[])
 
+  const nowLoading = useNowLoadingContext();
+
   const registerDid = async () => {
+    nowLoading.setNowLoading(true);
+    
     await DidTool.create();
+
+    setTimeout(() => {
+      nowLoading.setNowLoading(false);
+    }, 500);
     // const [recoveryKey, recoveryPrivateKey] = await IonKey.generateEs256kOperationKeyPair();
     // const [updateKey, updatePrivateKey] = await IonKey.generateEs256kOperationKeyPair();
     // const [signingKey, signingPrivateKey] = await IonKey.generateEs256kDidDocumentKeyPair({id: 'signing-key'});
