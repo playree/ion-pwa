@@ -1,22 +1,14 @@
 import * as React from 'react';
-import { Typography, Container, Grid, Button, TextField, Snackbar, Alert } from '@mui/material';
-import { Save as IconSave } from '@mui/icons-material'
+import { Typography, Container, Grid, Button, TextField, Snackbar, Alert} from '@mui/material';
+import { Create as IconCreate } from '@mui/icons-material'
 import { IonDid, IonDocumentModel, IonKey, IonRequest } from '@decentralized-identity/ion-sdk';
 import IonProofOfWork from 'ion-pow-sdk';
 
 import { Settings } from '../helpers/settings';
+import { DidTool } from '../helpers/didTools';
 
 export const PageDid = () => {
   const [open, setOpen] = React.useState(false);
-  const [userId, setUserId] = React.useState('');
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    switch (e.target.id) {
-      case 'user-id':
-        setUserId(() => e.target.value)
-        break;
-    }
-  };
 
   const handleOpen = () => {
     setOpen(true);
@@ -34,30 +26,32 @@ export const PageDid = () => {
   },[])
 
   const registerDid = async () => {
-    const [recoveryKey, recoveryPrivateKey] = await IonKey.generateEs256kOperationKeyPair();
-    const [updateKey, updatePrivateKey] = await IonKey.generateEs256kOperationKeyPair();
-    const [signingKey, signingPrivateKey] = await IonKey.generateEs256kDidDocumentKeyPair({id: userId});
-    const publicKeys = [signingKey];
+    await DidTool.create();
+    // const [recoveryKey, recoveryPrivateKey] = await IonKey.generateEs256kOperationKeyPair();
+    // const [updateKey, updatePrivateKey] = await IonKey.generateEs256kOperationKeyPair();
+    // const [signingKey, signingPrivateKey] = await IonKey.generateEs256kDidDocumentKeyPair({id: 'signing-key'});
+    // const publicKeys = [signingKey];
 
-    const document : IonDocumentModel = {
-      publicKeys
-    };
-    const input = { recoveryKey, updateKey, document };
-    const createRequest = IonRequest.createCreateRequest(input);
-    const longFormDid = IonDid.createLongFormDid(input);
-    const shortFormDid = longFormDid.substring(0, longFormDid.lastIndexOf(':'));
-    const didSuffix = shortFormDid.substring(shortFormDid.lastIndexOf(':') + 1);
+    // const document : IonDocumentModel = {
+    //   publicKeys
+    // };
+    // const input = { recoveryKey, updateKey, document };
+    // const createRequest = IonRequest.createCreateRequest(input);
+    // const longFormDid = IonDid.createLongFormDid(input);
+    // const shortFormDid = longFormDid.substring(0, longFormDid.lastIndexOf(':'));
+    // const didSuffix = shortFormDid.substring(shortFormDid.lastIndexOf(':') + 1);
 
-    console.log(createRequest);
+    // console.log(createRequest);
 
-    const settings = new Settings();
-    await settings.load();
-    const res = await IonProofOfWork.submitIonRequest(
-      settings.ionNodeUrl + 'proof-of-work-challenge',
-      settings.ionNodeUrl + 'operations',
-      JSON.stringify(createRequest)
-    );
-    console.log(res);
+    // const settings = new Settings();
+    // await settings.load();
+    // const resText = await IonProofOfWork.submitIonRequest(
+    //   settings.ionNodeUrl + 'proof-of-work-challenge',
+    //   settings.ionNodeUrl + 'operations',
+    //   JSON.stringify(createRequest)
+    // );
+    // const resObj = resText ? JSON.parse(resText) : null;
+    // console.log(resObj);
   };
 
   return (
@@ -68,13 +62,10 @@ export const PageDid = () => {
       <Container maxWidth='sm' sx={{marginTop: '16px'}}>
         <Grid container spacing={2}>
           <Grid item xs={12}>
-            任意のIDを入力してください。(※これはDIDではありません。)
+            DIDが発行されていません。
           </Grid>
-          <Grid item xs={12}>
-            <TextField id='user-id' fullWidth label='User ID' variant='outlined' value={userId} onChange={handleChange} />
-          </Grid>
-          <Grid item xs={12}>
-            <Button fullWidth variant='contained' startIcon={<IconSave />} onClick={registerDid}>登録</Button>
+          <Grid container item xs={12} justifyContent='center'>
+            <Button variant='contained' size='large' startIcon={<IconCreate />} onClick={registerDid}>DID発行</Button>
           </Grid>
         </Grid>
       </Container>

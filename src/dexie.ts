@@ -1,8 +1,10 @@
 import { Dexie, Table } from 'dexie';
 import JwkEs256k from '@decentralized-identity/ion-sdk/dist/lib/models/JwkEs256k'
 
+import { DidModel, PrivateKeyModel } from './helpers/didTools';
+
 // スキーマの修正がある場合、この値を変更する必要あり
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 1
 
 export class SettingsModel {
   key: string;
@@ -42,10 +44,13 @@ export class DidInfoModel {
 
 interface IonPwaDatabase extends Dexie {
   settings: Table<SettingsModel, string>;
-  didinfo: Table<DidInfoModel, string>;
+  did: Table<DidModel, string>;
+  privatekey: Table<PrivateKeyModel, string>;
 };
 export const dexieDb = new Dexie('ionpwa-db') as IonPwaDatabase;
+
 dexieDb.version(SCHEMA_VERSION).stores({
   settings: 'key',
-  didinfo: 'key',
+  did: 'id',
+  privatekey: 'id',
 });

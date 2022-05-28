@@ -38,7 +38,7 @@ export const PageSettings = () => {
 
   React.useEffect(() => {
     // 設定の読み込み
-    new Settings().load().then((settings) => {
+    Settings.load().then((settings) => {
       setIonNodeUrl(settings.ionNodeUrl);
     });
   },[])
