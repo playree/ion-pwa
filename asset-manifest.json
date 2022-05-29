@@ -1,17 +1,25 @@
 {
   "files": {
-    "main.css": "/ion-pwa/static/css/main.073c9b0a.css",
-    "main.js": "/ion-pwa/static/js/main.3cfecfd1.js",
-    "static/js/787.bde805fb.chunk.js": "/ion-pwa/static/js/787.bde805fb.chunk.js",
-    "service-worker.js": "/ion-pwa/service-worker.js",
-    "static/media/logo.svg": "/ion-pwa/static/media/logo.103b5fa18196d5665a7e12318285c916.svg",
+    "main.css": "/ion-pwa/static/css/main.a617e044.chunk.css",
+    "main.js": "/ion-pwa/static/js/main.15fd6ce7.chunk.js",
+    "main.js.map": "/ion-pwa/static/js/main.15fd6ce7.chunk.js.map",
+    "runtime-main.js": "/ion-pwa/static/js/runtime-main.0b5afac0.js",
+    "runtime-main.js.map": "/ion-pwa/static/js/runtime-main.0b5afac0.js.map",
+    "static/js/2.603e0b56.chunk.js": "/ion-pwa/static/js/2.603e0b56.chunk.js",
+    "static/js/2.603e0b56.chunk.js.map": "/ion-pwa/static/js/2.603e0b56.chunk.js.map",
+    "static/js/3.c2f548a5.chunk.js": "/ion-pwa/static/js/3.c2f548a5.chunk.js",
+    "static/js/3.c2f548a5.chunk.js.map": "/ion-pwa/static/js/3.c2f548a5.chunk.js.map",
     "index.html": "/ion-pwa/index.html",
-    "main.073c9b0a.css.map": "/ion-pwa/static/css/main.073c9b0a.css.map",
-    "main.3cfecfd1.js.map": "/ion-pwa/static/js/main.3cfecfd1.js.map",
-    "787.bde805fb.chunk.js.map": "/ion-pwa/static/js/787.bde805fb.chunk.js.map"
+    "service-worker.js": "/ion-pwa/service-worker.js",
+    "service-worker.js.LICENSE.txt": "/ion-pwa/service-worker.js.LICENSE.txt",
+    "service-worker.js.map": "/ion-pwa/service-worker.js.map",
+    "static/css/main.a617e044.chunk.css.map": "/ion-pwa/static/css/main.a617e044.chunk.css.map",
+    "static/js/2.603e0b56.chunk.js.LICENSE.txt": "/ion-pwa/static/js/2.603e0b56.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
-    "static/css/main.073c9b0a.css",
-    "static/js/main.3cfecfd1.js"
+    "static/js/runtime-main.0b5afac0.js",
+    "static/js/2.603e0b56.chunk.js",
+    "static/css/main.a617e044.chunk.css",
+    "static/js/main.15fd6ce7.chunk.js"
   ]
 }
