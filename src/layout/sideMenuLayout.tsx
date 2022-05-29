@@ -8,8 +8,8 @@ import {
   Menu as IconMenu,
   ChevronLeft as IconChevronLeft,
   ChevronRight as IconChevronRight,
-  Home as IconHome, 
-  Person as IconPerson, 
+  Home as IconHome,
+  Key as IconKey,
   Settings as IconSettings 
 } from '@mui/icons-material';
 import { NavLink } from 'react-router-dom';
@@ -166,13 +166,13 @@ export const SideMenuLayout = () => {
           <NavLink to='/' style={menulink} onClick={handleDrawerClose}>
             <ListItem button>
               <ListItemIcon sx={{minWidth: '40px'}}><IconHome /></ListItemIcon>
-              <ListItemText primary='Top' />
+              <ListItemText primary='トップ' />
             </ListItem>
           </NavLink>
           <NavLink to='/did/' style={menulink} onClick={handleDrawerClose}>
             <ListItem button>
-              <ListItemIcon sx={{minWidth: '40px'}}><IconPerson /></ListItemIcon>
-              <ListItemText primary='DID' />
+              <ListItemIcon sx={{minWidth: '40px'}}><IconKey /></ListItemIcon>
+              <ListItemText primary='DID詳細' />
             </ListItem>
           </NavLink>
         </List>
@@ -181,7 +181,7 @@ export const SideMenuLayout = () => {
           <NavLink to='/settings/' style={menulink} onClick={handleDrawerClose}>
             <ListItem button>
               <ListItemIcon sx={{minWidth: '40px'}}><IconSettings /></ListItemIcon>
-              <ListItemText primary='Settings' />
+              <ListItemText primary='設定' />
             </ListItem>
           </NavLink>
         </List>

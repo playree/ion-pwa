@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Typography, Container, Grid, Button, Snackbar, Alert, 
   Card, CardContent, CardActions, TextField, Chip, 
-  Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText} from '@mui/material';
+  Dialog, DialogTitle, DialogContent, DialogActions, Divider} from '@mui/material';
 import { 
   Create as IconCreate
 } from '@mui/icons-material'
@@ -9,7 +9,6 @@ import {
 import { Settings } from '../helpers/settings';
 import { DidTool, PrivateKeyTool } from '../helpers/didTools';
 import { useNowLoadingContext, useSettingsContext, useDidContext } from '../layout/sideMenuLayout';
-import { fontSize } from '@mui/system';
 
 export const PageTop = () => {
   const nowLoadingContext = useNowLoadingContext();
@@ -80,6 +79,20 @@ export const PageTop = () => {
   };
 
   const resolveDid = async () => {
+    if (!didContext.didModel) {
+      return
+    }
+    return await _resolveDid(didContext.didModel.did);
+  };
+
+  const resolveDidLong = async () => {
+    if (!didContext.didModel) {
+      return
+    }
+    return await _resolveDid(didContext.didModel.didLong);
+  };
+
+  const _resolveDid = async (did: string) => {
     if (!settingsContext.settings) {
       return
     }
@@ -88,8 +101,17 @@ export const PageTop = () => {
     }
     nowLoadingContext.setNowLoading(true);
 
-    const resolveDid = await DidTool.resolve(settingsContext.settings.urlResolve, didContext.didModel.did);
-    console.log(resolveDid);
+    const resolveDid = await DidTool.resolve(settingsContext.settings.urlResolve, did);
+    if (!resolveDid.error) {
+      if (!didContext.didModel.published) {
+        if (resolveDid.didDocumentMetadata.method.published) {
+          // publishedの更新
+          didContext.didModel.published = true;
+          didContext.setDidModel(didContext.didModel);
+          await DidTool.save(didContext.didModel);
+        }
+      }
+    }
 
     setTimeout(() => {
       setTextDialog({
@@ -99,14 +121,6 @@ export const PageTop = () => {
       setOpenDialog(true);
       nowLoadingContext.setNowLoading(false);
     }, 500);
-  };
-
-  const test = async () => {
-    setTextDialog({
-      title: 'DID検証レスポンス',
-      text: '1abcdefg\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12'
-    });
-    setOpenDialog(true);
   };
 
   const closeDialog = async () => {
@@ -147,7 +161,7 @@ export const PageTop = () => {
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={12}>
-            <Card>
+            <Card variant='outlined'>
               <CardContent>
                 <TextField
                   label='DID'
@@ -162,9 +176,10 @@ export const PageTop = () => {
                   {published}
                 </Container>
               </CardContent>
+              <Divider sx={{marginX: '8px'}} />
               <CardActions>
-                <Button onClick={resolveDid}>DIDを検証する</Button>
-                <Button onClick={test}>test</Button>
+                <Button size='small' onClick={resolveDid}>DIDを検証</Button>
+                <Button size='small' onClick={resolveDidLong}>DID(Long)を検証</Button>
               </CardActions>
             </Card>
           </Grid>
