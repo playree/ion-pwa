@@ -15,7 +15,8 @@ export class SettingsModel {
   };
 
   static KEYS = {
-    ION_NODE_URL: 'ION_NODE_URL',
+    URL_OPERATION: 'URL_OPERATION',
+    URL_RESOLVE: 'URL_RESOLVE',
   }
 };
 

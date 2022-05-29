@@ -190,7 +190,7 @@ export const SideMenuLayout = () => {
       <NowLoadingContext.Provider value={nowLoadingValue}>
         <SettingsContext.Provider value={settingsValue}>
           <DidContext.Provider value={didValue}>
-            <Main onClick={handleDrawerClose} sx={{height: '100vh'}}>
+            <Main onClick={handleDrawerClose} sx={{height: '100vh', width: '100%', paddingX: '8px'}}>
               <DrawerHeader sx={{minHeight: '40px'}} />
               <Outlet />
             </Main>

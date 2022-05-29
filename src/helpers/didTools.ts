@@ -3,14 +3,17 @@ import JwkEs256k from '@decentralized-identity/ion-sdk/dist/lib/models/JwkEs256k
 import IonProofOfWork from 'ion-pow-sdk';
 import { dexieDb } from '../dexie';
 import urljoin from 'url-join';
+import { fetch } from 'cross-fetch';
 
 export class DidTool {
   static ACTION_PATH = {
     OPERATIONS: 'operations',
+    IDENTIFIERS: 'identifiers',
+
     PROOF: 'proof-of-work-challenge',
   };
 
-  static async create(ionNodeUrl: string, signingKeyId: string = 'signing-key') {
+  static async create(url: string, signingKeyId: string = 'signing-key') {
     // 鍵生成
     const [recoveryKey, recoveryPrivateKey] = await IonKey.generateEs256kOperationKeyPair();
     const [updateKey, updatePrivateKey] = await IonKey.generateEs256kOperationKeyPair();
@@ -27,8 +30,8 @@ export class DidTool {
     const longFormSuffixData = longFormDid.substring(longFormDid.lastIndexOf(':') + 1);
 
     const resText = await IonProofOfWork.submitIonRequest(
-      urljoin(ionNodeUrl, DidTool.ACTION_PATH.PROOF),
-      urljoin(ionNodeUrl, DidTool.ACTION_PATH.OPERATIONS),
+      urljoin(url, DidTool.ACTION_PATH.PROOF),
+      urljoin(url, DidTool.ACTION_PATH.OPERATIONS),
       JSON.stringify(createRequest)
     );
     if (!resText) {
@@ -64,12 +67,36 @@ export class DidTool {
     };
   };
 
+  static async resolve(url: string, did: string) {
+    const res = await fetch(urljoin(url, DidTool.ACTION_PATH.IDENTIFIERS, did));
+    if (res.status !== 200) {
+      return {
+        error: {
+          status: res.status,
+          text: await res.text()
+        }
+      }
+    }
+    return await res.json();
+  }
+
   static async save(didModel: DidModel) {
     await dexieDb.did.put(didModel);
   }
 
   static async load() {
-    return await dexieDb.did.get(DidModel.ID);
+    const didModel = await dexieDb.did.get(DidModel.ID);
+    if (didModel) {
+      return new DidModel(
+        didModel.scheme,
+        didModel.method,
+        didModel.didSuffix,
+        didModel.longFormSuffixData,
+        didModel.signingKeyId,
+        didModel.published
+      );
+    }
+    return null;
   };
 };
 
@@ -113,6 +140,14 @@ export class DidModel {
     this.signingKeyId = signingKeyId;
     this.published = published;
   };
+
+  get did() {
+    return [this.scheme, this.method, this.didSuffix].join(':');
+  }
+
+  get didLong() {
+    return [this.scheme, this.method, this.didSuffix, this.longFormSuffixData].join(':');
+  }
 
   static ID = 'onlyid';
   static SIGNING_KEY = 'signing-key';

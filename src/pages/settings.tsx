@@ -6,12 +6,16 @@ import { Settings } from '../helpers/settings';
 
 export const PageSettings = () => {
   const [open, setOpen] = React.useState(false);
-  const [ionNodeUrl, setIonNodeUrl] = React.useState('');
+  const [urlOperation, setUrlOperation] = React.useState('');
+  const [urlResolve, setUrlResolve] = React.useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     switch (e.target.id) {
-      case 'ion-node-url':
-        setIonNodeUrl(() => e.target.value)
+      case 'url-operation':
+        setUrlOperation(() => e.target.value)
+        break;
+      case 'url-resolve':
+        setUrlResolve(() => e.target.value)
         break;
     }
   };
@@ -30,7 +34,8 @@ export const PageSettings = () => {
   const saveSettings = async () => {
     // 設定の保存
     const settings = new Settings();
-    settings.ionNodeUrl = ionNodeUrl;
+    settings.urlOperation = urlOperation;
+    settings.urlResolve = urlResolve;
     await settings.save();
     
     handleOpen();
@@ -39,19 +44,23 @@ export const PageSettings = () => {
   React.useEffect(() => {
     // 設定の読み込み
     Settings.load().then((settings) => {
-      setIonNodeUrl(settings.ionNodeUrl);
+      setUrlOperation(settings.urlOperation);
+      setUrlResolve(settings.urlResolve);
     });
   },[])
 
   return (
     <>
-      <Typography variant='h5'>
-        Settings
-      </Typography>
-      <Container maxWidth='sm' sx={{marginTop: '16px'}}>
+      <Container maxWidth='sm' sx={{paddingX: '8px'}}>
+        <Typography variant='h5' sx={{marginBottom: '16px'}}>
+          Settings
+        </Typography>
         <Grid container spacing={2}>
           <Grid item xs={12}>
-            <TextField id='ion-node-url' fullWidth label='ION Node URL' variant='outlined' value={ionNodeUrl} onChange={handleChange} />
+            <TextField id='url-operation' fullWidth label='Operation URL' variant='outlined' value={urlOperation} onChange={handleChange} />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField id='url-resolve' fullWidth label='Resolve URL' variant='outlined' value={urlResolve} onChange={handleChange} />
           </Grid>
           <Grid item xs={8}>
             <Button fullWidth variant='contained' startIcon={<IconSave />} onClick={saveSettings}>保存</Button>
