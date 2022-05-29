@@ -203,6 +203,7 @@ export const SideMenuLayout = () => {
           </DidContext.Provider>
         </SettingsContext.Provider>
       </NowLoadingContext.Provider>
+      <div id='SW-update-dialog'></div>
     </Box>
   );
 }

@@ -14,15 +14,17 @@ export const PageDid = () => {
   const setup = async () => {
     if (didContext.didModel) {
       setPrivateKeys({
-        signing: JSON.stringify(await PrivateKeyTool.load(didContext.didModel.signingKeyId), null, 2),
-        recovery: JSON.stringify(await PrivateKeyTool.load(PrivateKeyTool.RESERVE_ID.RECOVERY), null, 2),
-        update: JSON.stringify(await PrivateKeyTool.load(PrivateKeyTool.RESERVE_ID.UPDATE), null, 2)
+        signing: JSON.stringify((await PrivateKeyTool.load(didContext.didModel.signingKeyId))?.privateKey, null, 2),
+        recovery: JSON.stringify((await PrivateKeyTool.load(PrivateKeyTool.RESERVE_ID.RECOVERY))?.privateKey, null, 2),
+        update: JSON.stringify((await PrivateKeyTool.load(PrivateKeyTool.RESERVE_ID.UPDATE))?.privateKey, null, 2)
       });
     };
   };
 
   React.useEffect(() => {
-    setup();
+    if (!privateKeys.signing) {
+      setup();
+    }
   });
 
   if (!didContext.didModel) {
