@@ -1,12 +1,12 @@
-import { VFC, useState } from 'react';
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
+import React, { useState } from 'react';
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText} from '@mui/material';
 
-export const ServiceWorkerUpdateDialog: VFC<{registration: any}> = (props: {registration: any}) => {
-  const { registration } = props;
+export const SWUpdateDialog: React.FC<{ registration: ServiceWorkerRegistration }> = ({ registration }) => {
   const [show, setShow] = useState(!!registration.waiting);
   const handleUpdate = () => {
     registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
     setShow(false);
+    window.location.reload();
   };
 
   return (

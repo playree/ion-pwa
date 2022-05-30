@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Outlet } from 'react-router-dom'
 import { styled, useTheme } from '@mui/material/styles';
 import { Box, Drawer, CssBaseline, Toolbar, Typography, Divider, IconButton, 
-  List, ListItem, ListItemIcon, ListItemText, Backdrop, CircularProgress } from '@mui/material';
+  List, ListItem, ListItemIcon, ListItemText, Backdrop, CircularProgress} from '@mui/material';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import { 
   Menu as IconMenu,
@@ -17,6 +17,7 @@ import { NavLink } from 'react-router-dom';
 import { Settings } from '../helpers/settings';
 import { DidModel } from '../helpers/didTools';
 
+const buildNo = '20220530.001';
 const drawerWidth = 200;
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
@@ -185,6 +186,12 @@ export const SideMenuLayout = () => {
             </ListItem>
           </NavLink>
         </List>
+        <Divider />
+        <List>
+          <ListItem sx={{fontSize: '14px', color: 'gray'}}>
+            build: {buildNo}
+          </ListItem>
+        </List>
 
       </Drawer>
       <NowLoadingContext.Provider value={nowLoadingValue}>
@@ -203,7 +210,7 @@ export const SideMenuLayout = () => {
           </DidContext.Provider>
         </SettingsContext.Provider>
       </NowLoadingContext.Provider>
-      <div id='SW-update-dialog'></div>
+      <div className="SW-update-dialog"></div>
     </Box>
   );
 }

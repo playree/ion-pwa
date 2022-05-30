@@ -4,7 +4,7 @@ import './index.css';
 import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
-import { ServiceWorkerUpdateDialog } from './ServiceWorkerUpdateDialog';
+import { SWUpdateDialog } from './ServiceWorkerUpdateDialog';
 
 ReactDOM.render(
   <React.StrictMode>
@@ -20,10 +20,9 @@ ReactDOM.render(
 serviceWorkerRegistration.register({
   onUpdate: registration => {
     if (registration.waiting) {
-      ReactDOM.render(<ServiceWorkerUpdateDialog registration={registration} />, 
-        document.querySelector('.SW-update-dialog'));
+      ReactDOM.render(<SWUpdateDialog registration={registration} />, document.querySelector('.SW-update-dialog'));
     }
-  }
+  },
 });
 
 // If you want to start measuring performance in your app, pass a function

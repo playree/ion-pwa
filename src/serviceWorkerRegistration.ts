@@ -62,6 +62,10 @@ function registerValidSW(swUrl: string, config?: Config) {
     .register(swUrl)
     .then((registration) => {
       registration.onupdatefound = () => {
+        // 以下3行を追加
+        if (registration.waiting && config && config.onUpdate) {
+          config.onUpdate(registration);
+        }
         const installingWorker = registration.installing;
         if (installingWorker == null) {
           return;
@@ -92,8 +96,6 @@ function registerValidSW(swUrl: string, config?: Config) {
                 config.onSuccess(registration);
               }
             }
-          } else if (installingWorker.state === "activated") {
-            window.location.reload();
           }
         };
       };
