@@ -98,6 +98,10 @@ export class DidTool {
     }
     return null;
   };
+
+  static async clear() {
+    await dexieDb.did.clear();
+  }
 };
 
 export class PrivateKeyTool {
@@ -112,6 +116,9 @@ export class PrivateKeyTool {
   static async load(id: string) {
     return await dexieDb.privatekey.get(id);
   };
+  static async clear() {
+    await dexieDb.privatekey.clear();
+  }
 };
 
 export class DidModel {

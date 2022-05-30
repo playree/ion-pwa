@@ -97,7 +97,7 @@ export const useSettingsContext = ():SettingsContextType => {
 // DID情報のコンテキスト
 export type DidContextType = {
   didModel: DidModel | null;
-  setDidModel: (didModel: DidModel) => void;
+  setDidModel: (didModel: DidModel | null) => void;
 }
 const DidContext = React.createContext<DidContextType>({} as DidContextType);
 export const useDidContext = ():DidContextType => {

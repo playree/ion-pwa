@@ -123,6 +123,21 @@ export const PageTop = () => {
     }, 500);
   };
 
+  const deleteDid = async () => {
+    nowLoadingContext.setNowLoading(true);
+
+    // 発行した各種情報を削除
+    await PrivateKeyTool.clear();
+    await DidTool.clear();
+
+    // コンテキストにも反映
+    didContext.setDidModel(null);
+
+    setTimeout(() => {
+      nowLoadingContext.setNowLoading(false);
+    }, 500);
+  };
+
   const closeDialog = async () => {
     setOpenDialog(false);
   };
@@ -130,10 +145,10 @@ export const PageTop = () => {
   if (!didContext.didModel) {
     return (
       <>
-        <Typography variant='h5'>
-          DID
-        </Typography>
-        <Container maxWidth='sm' sx={{marginTop: '16px'}}>
+        <Container maxWidth='sm' sx={{paddingX: '8px'}}>
+          <Typography variant='h5' sx={{marginBottom: '16px'}}>
+            DID
+          </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               DIDが発行されていません。
@@ -180,6 +195,7 @@ export const PageTop = () => {
               <CardActions>
                 <Button size='small' onClick={resolveDid}>DIDを検証</Button>
                 <Button size='small' onClick={resolveDidLong}>DID(Long)を検証</Button>
+                <Button size='small' color='error' onClick={deleteDid}>削除</Button>
               </CardActions>
             </Card>
           </Grid>
