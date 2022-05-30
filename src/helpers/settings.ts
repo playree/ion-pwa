@@ -33,4 +33,8 @@ export class Settings {
     await settings.load();
     return settings;
   }
+
+  static async clear() {
+    await dexieDb.settings.clear();
+  }
 }

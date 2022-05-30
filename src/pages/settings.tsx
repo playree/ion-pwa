@@ -41,6 +41,13 @@ export const PageSettings = () => {
     handleOpen();
   };
 
+  const resetSettings = async () => {
+    await Settings.clear();
+    const settings = new Settings();
+    setUrlOperation(settings.urlOperation);
+    setUrlResolve(settings.urlResolve);
+  };
+
   React.useEffect(() => {
     // 設定の読み込み
     Settings.load().then((settings) => {
@@ -66,7 +73,7 @@ export const PageSettings = () => {
             <Button fullWidth variant='contained' startIcon={<IconSave />} onClick={saveSettings}>保存</Button>
           </Grid>
           <Grid item xs={4}>
-            <Button fullWidth variant='contained' color='error'>リセット</Button>
+            <Button fullWidth variant='contained' color='error' onClick={resetSettings}>リセット</Button>
           </Grid>
         </Grid>
       </Container>
