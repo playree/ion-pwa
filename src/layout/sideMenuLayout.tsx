@@ -9,6 +9,7 @@ import {
   ChevronLeft as IconChevronLeft,
   ChevronRight as IconChevronRight,
   Home as IconHome,
+  QrCode as IconQrCode,
   Key as IconKey,
   Settings as IconSettings 
 } from '@mui/icons-material';
@@ -17,7 +18,7 @@ import { NavLink } from 'react-router-dom';
 import { Settings } from '../helpers/settings';
 import { DidModel } from '../helpers/didTools';
 
-const buildNo = '20220530.001';
+const buildNo = '20220530.002';
 const drawerWidth = 200;
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
@@ -168,6 +169,12 @@ export const SideMenuLayout = () => {
             <ListItem button>
               <ListItemIcon sx={{minWidth: '40px'}}><IconHome /></ListItemIcon>
               <ListItemText primary='トップ' />
+            </ListItem>
+          </NavLink>
+          <NavLink to='/qr/' style={menulink} onClick={handleDrawerClose}>
+            <ListItem button>
+              <ListItemIcon sx={{minWidth: '40px'}}><IconQrCode /></ListItemIcon>
+              <ListItemText primary='QR読み込み' />
             </ListItem>
           </NavLink>
           <NavLink to='/did/' style={menulink} onClick={handleDrawerClose}>
