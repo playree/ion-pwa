@@ -7,7 +7,7 @@ export const PageQr = () => {
 
   const qr = (
     <QrReader
-      constraints={{ facingMode: 'user' }}
+      constraints={{ facingMode: 'environment' }}
       onResult={(result) => {
         if (result) {
           console.log(result);

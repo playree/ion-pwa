@@ -6,7 +6,7 @@ export const SWUpdateDialog: React.FC<{ registration: ServiceWorkerRegistration 
   const handleUpdate = () => {
     registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
     setShow(false);
-    window.location.reload();
+    //window.location.reload();
   };
 
   return (
