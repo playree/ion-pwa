@@ -4,6 +4,9 @@ import IonProofOfWork from 'ion-pow-sdk';
 import { dexieDb } from '../dexie';
 import urljoin from 'url-join';
 import { fetch } from 'cross-fetch';
+import base64url from 'base64url';
+import { createHash } from 'crypto';
+import { ES256K } from '@transmute/did-key-secp256k1';
 
 export class DidTool {
   static ACTION_PATH = {
@@ -169,3 +172,48 @@ export class PrivateKeyModel {
     this.privateKey = privateKey;
   };
 };
+
+export class VerifiableTool {
+  static decodeJWS(jwsString: string): JWTObject {
+    const jwsParse = jwsString.split('.');
+    return {
+      header: JSON.parse(base64url.decode(jwsParse[0])),
+      payload: JSON.parse(base64url.decode(jwsParse[1])),
+      jws: jwsString
+    };
+  };
+
+  static generateSub(jwk: any) {
+    const sha256 = createHash('sha256');
+    const hash = sha256.update(JSON.stringify(jwk)).digest();
+    return base64url.encode(hash);
+  };
+
+  static generateHash(text: any) {
+    const sha256 = createHash('sha256');
+    const hash = sha256.update(text).digest();
+    return base64url.toBase64(base64url.encode(hash));
+  };
+
+  static async signJws(header: any, payload: any, privateJwk: any){
+    switch(privateJwk.crv){
+      case 'secp256k1':
+        return ES256K.sign(payload, privateJwk, header);
+      default: throw new Error('Unsupported cryptographic type');
+    };
+  };
+
+  static async verifyJws(jws: string, publicJwk: any){
+    switch(publicJwk.crv){
+      case 'secp256k1':
+        return ES256K.verify(jws, publicJwk);
+      default: throw new Error('Unsupported cryptographic type');
+    };
+  };
+}
+
+export type JWTObject = {
+  header: any,
+  payload: any,
+  jws: string,
+}
