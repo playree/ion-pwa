@@ -187,6 +187,27 @@ export class PrivateKeyModel {
   };
 };
 
+export class VcModel {
+  id: number | undefined;
+  vc: JWTObject;
+
+  constructor(vc: JWTObject) {
+    this.vc = vc;
+  };
+};
+
+export class VcTool {
+  static async save(vc: JWTObject) {
+    await dexieDb.vc.put(new VcModel(vc));
+  };
+  static async all() {
+    return await dexieDb.vc.toArray();
+  };
+  static async clear() {
+    await dexieDb.vc.clear();
+  }
+};
+
 export class VerifiableTool {
   static decodeJWS(jwsString: string): JWTObject {
     const jwsParse = jwsString.split('.');

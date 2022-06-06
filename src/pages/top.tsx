@@ -43,7 +43,7 @@ export const PageTop = () => {
 
     setTimeout(() => {
       nowLoadingContext.setNowLoading(false);
-    }, 500);
+    }, 300);
   };
 
   React.useEffect(() => {
@@ -75,7 +75,7 @@ export const PageTop = () => {
     setTimeout(() => {
       nowLoadingContext.setNowLoading(false);
       setOpenDidCreated(true);
-    }, 500);
+    }, 300);
   };
 
   const resolveDid = async () => {
@@ -135,7 +135,7 @@ export const PageTop = () => {
 
     setTimeout(() => {
       nowLoadingContext.setNowLoading(false);
-    }, 500);
+    }, 300);
   };
 
   const closeDialog = async () => {
