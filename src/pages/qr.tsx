@@ -86,7 +86,7 @@ export const PageQr = () => {
       header: {
         alg: 'ES256K',
         typ: 'JWT',
-        kid: did
+        kid: did + '#' + didContext.didModel.signingKeyId
       },
       payload: {
         iss: 'https://self-issued.me',
@@ -98,7 +98,7 @@ export const PageQr = () => {
         sub: VerifiableTool.generateSub(didInfo.didDocument.verificationMethod[0].publicKeyJwk),
         jti: uuid.v4(),
         did: did,
-        pin: VerifiableTool.generateHash('1106'),
+        pin: VerifiableTool.generateHash('8733'),
         attestations: {
           idTokens: {
             'https://self-issued.me': credentialOffer.payload.id_token_hint
