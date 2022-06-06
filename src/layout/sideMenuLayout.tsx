@@ -11,14 +11,15 @@ import {
   Home as IconHome,
   QrCode as IconQrCode,
   Key as IconKey,
-  Settings as IconSettings 
+  CardMembership as IconCardMembership,
+  Settings as IconSettings,
 } from '@mui/icons-material';
 import { NavLink } from 'react-router-dom';
 
 import { Settings } from '../helpers/settings';
 import { DidModel } from '../helpers/didTools';
 
-const buildNo = '20220531.005';
+const buildNo = '20220607.001';
 const drawerWidth = 200;
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
@@ -181,6 +182,12 @@ export const SideMenuLayout = () => {
             <ListItem button>
               <ListItemIcon sx={{minWidth: '40px'}}><IconKey /></ListItemIcon>
               <ListItemText primary='DID詳細' />
+            </ListItem>
+          </NavLink>
+          <NavLink to='/vc/' style={menulink} onClick={handleDrawerClose}>
+            <ListItem button>
+              <ListItemIcon sx={{minWidth: '40px'}}><IconCardMembership /></ListItemIcon>
+              <ListItemText primary='VC一覧' />
             </ListItem>
           </NavLink>
         </List>
