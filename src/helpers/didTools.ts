@@ -1,4 +1,4 @@
-import { IonDid, IonDocumentModel, IonKey, IonRequest } from '@decentralized-identity/ion-sdk';
+import { IonDid, IonDocumentModel, IonKey, IonRequest, IonPublicKeyPurpose } from '@decentralized-identity/ion-sdk';
 import JwkEs256k from '@decentralized-identity/ion-sdk/dist/lib/models/JwkEs256k';
 import IonProofOfWork from 'ion-pow-sdk';
 import { dexieDb } from '../dexie';
@@ -16,11 +16,25 @@ export class DidTool {
     PROOF: 'proof-of-work-challenge',
   };
 
-  static async create(url: string, signingKeyId: string = 'signing-key') {
+  static async create(url: string, keyid: string = '') {
+    const signingKeyId = keyid ? keyid : VerifiableTool.generateKid();
+
     // 鍵生成
     const [recoveryKey, recoveryPrivateKey] = await IonKey.generateEs256kOperationKeyPair();
     const [updateKey, updatePrivateKey] = await IonKey.generateEs256kOperationKeyPair();
     const [signingKey, signingPrivateKey] = await IonKey.generateEs256kDidDocumentKeyPair({id: signingKeyId});
+    
+    // 追加属性
+    const _key = signingKey.publicKeyJwk as JwkEs256k;
+    signingKey.publicKeyJwk = { 
+      crv: _key.crv, 
+      kid: signingKeyId,
+      kty: _key.kty, 
+      use: 'sig',
+      x: _key.x,
+      y: _key.y 
+    };
+    signingKey.purposes = [IonPublicKeyPurpose.Authentication];
     const publicKeys = [signingKey];
 
     // DID作成リクエスト
@@ -185,7 +199,8 @@ export class VerifiableTool {
 
   static generateSub(jwk: any) {
     const sha256 = createHash('sha256');
-    const hash = sha256.update(JSON.stringify(jwk)).digest();
+    const jwkString = `{"crv":"${jwk.crv}","kty":"${jwk.kty}","x":"${jwk.x}","y":"${jwk.y}"}`;
+    const hash = sha256.update(jwkString).digest();
     return base64url.encode(hash);
   };
 
@@ -194,6 +209,11 @@ export class VerifiableTool {
     const hash = sha256.update(text).digest();
     return base64url.toBase64(base64url.encode(hash));
   };
+
+  static generateKid() {
+    const md5 = createHash('md5');
+    return md5.update(new Date().toString()).digest('hex');
+  }
 
   static async signJws(header: any, payload: any, privateJwk: any){
     switch(privateJwk.crv){
