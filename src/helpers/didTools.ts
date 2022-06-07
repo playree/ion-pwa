@@ -25,15 +25,6 @@ export class DidTool {
     const [signingKey, signingPrivateKey] = await IonKey.generateEs256kDidDocumentKeyPair({id: signingKeyId});
     
     // 追加属性
-    const _key = signingKey.publicKeyJwk as JwkEs256k;
-    signingKey.publicKeyJwk = { 
-      crv: _key.crv, 
-      kid: signingKeyId,
-      kty: _key.kty, 
-      use: 'sig',
-      x: _key.x,
-      y: _key.y 
-    };
     signingKey.purposes = [IonPublicKeyPurpose.Authentication];
     const publicKeys = [signingKey];
 
@@ -149,11 +140,11 @@ export class DidModel {
   published: boolean;
 
   constructor(
-    scheme: string = '',
-    method: string = '',
-    didSuffix: string = '',
-    longFormSuffixData: string = '',
-    signingKeyId: string = DidModel.SIGNING_KEY,
+    scheme: string,
+    method: string,
+    didSuffix: string,
+    longFormSuffixData: string,
+    signingKeyId: string,
     published = false
     ) {
     this.id = DidModel.ID;
@@ -166,15 +157,22 @@ export class DidModel {
   };
 
   get did() {
+    return this.published ? this.didShort : this.didLong;
+  };
+
+  get didShort() {
     return [this.scheme, this.method, this.didSuffix].join(':');
-  }
+  };
 
   get didLong() {
     return [this.scheme, this.method, this.didSuffix, this.longFormSuffixData].join(':');
-  }
+  };
+
+  get kid() {
+    return `${this.did}#${this.signingKeyId}`;
+  };
 
   static ID = 'onlyid';
-  static SIGNING_KEY = 'signing-key';
 };
 
 export class PrivateKeyModel {

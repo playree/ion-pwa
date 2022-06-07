@@ -4,16 +4,24 @@ import { Typography, Container, Card, CardContent, CardHeader, Button, TextField
 import { QrReader } from 'react-qr-reader';
 import { fetch } from 'cross-fetch';
 import * as QueryString from 'query-string';
-import { VerifiableTool, DidTool, PrivateKeyTool, VcTool } from '../helpers/didTools';
+import { VerifiableTool, DidTool, PrivateKeyTool, VcTool, JWTObject } from '../helpers/didTools';
 import { useDidContext, useSettingsContext, useNowLoadingContext } from '../layout/sideMenuLayout';
 import * as uuid from 'uuid';
 
+const STATUS = {
+  QR_READ: 0,
+  QR_READED: 1,
+  VC_CONFIRM: 2,
+  VC_RECEIVED: 3
+};
+
 export const PageQr = () => {
+  const [status, setStatus] = React.useState(STATUS.QR_READ);
   const [qrText, setQrText] = React.useState('');
   const [inputText, setInputText] = React.useState('');
   const [inputPin, setInputPin] = React.useState('');
-  const [vcProcess, setVcProcess] = React.useState({credentialOffer:{} as any, credentialIssuerUrl:''});
-  const [isFinished, setFinished] =  React.useState(false);
+  const [vcProcess, setVcProcess] = React.useState({credentialOffer:{} as JWTObject, vcExpert:{} as JWTObject});
+
   const didContext = useDidContext();
   const settingsContext = useSettingsContext();
   const nowLoadingContext = useNowLoadingContext();
@@ -51,9 +59,11 @@ export const PageQr = () => {
     return jwt;
   };
 
-  const issueVc = async () => {
-    setQrText(inputText);
+  const manualInput = async () => {
+    issueVc(inputText);
+  };
 
+  const issueVc = async (requestUrl: string) => {
     if (!settingsContext.settings) {
       return
     }
@@ -61,20 +71,25 @@ export const PageQr = () => {
       return
     }
 
-    nowLoadingContext.setNowLoading(true);
+    try {
+      nowLoadingContext.setNowLoading(true);
 
-    // 1. オファーリクエストを取得(Issure→HolderへのSIOP Request)
-    const credentialOffer = await getCredentialOffer(inputText);
+      // 1. オファーリクエストを取得(Issure→HolderへのSIOP Request)
+      const credentialOffer = await getCredentialOffer(requestUrl);
 
-    // 2. オファーリクエストの検証
-    const manifestUrl = credentialOffer.payload.claims.vp_token.presentation_definition.input_descriptors[0].issuance[0].manifest;
-    const vcExpert = await getVCExpert(manifestUrl);
+      // 2. オファーリクエストの検証
+      const manifestUrl = credentialOffer.payload.claims.vp_token.presentation_definition.input_descriptors[0].issuance[0].manifest;
+      const vcExpert = await getVCExpert(manifestUrl);
 
-    // 情報を一時保存
-    setVcProcess({
-      credentialOffer: credentialOffer,
-      credentialIssuerUrl: vcExpert.payload.input.credentialIssuer
-    })
+      // 情報を一時保存
+      setVcProcess({
+        credentialOffer: credentialOffer,
+        vcExpert: vcExpert
+      });
+      setStatus(STATUS.VC_CONFIRM);
+    } catch (e) {
+      alert(e);
+    };
 
     // ここで内容をユーザーに提示し、確認を行う
     setTimeout(() => {
@@ -83,7 +98,6 @@ export const PageQr = () => {
   }
 
   const addVC = async () => {
-    // 3. レスポンス(Holder→IssureへのSIOP Response)
     if (!settingsContext.settings) {
       return
     }
@@ -91,63 +105,72 @@ export const PageQr = () => {
       return
     }
 
-    nowLoadingContext.setNowLoading(true);
+    // 3. レスポンス(Holder→IssureへのSIOP Response)
 
-    // 未公開の場合はDID(Long)を使用
-    const did = didContext.didModel.published ? didContext.didModel.did : didContext.didModel.didLong;
-    
-    // 自身の公開鍵を取得
-    const didInfo = await DidTool.resolve(settingsContext.settings.urlResolve, did);
+    try {
+      nowLoadingContext.setNowLoading(true);
+      
+      // 自身の公開鍵を取得
+      const didInfo = await DidTool.resolve(settingsContext.settings.urlResolve, didContext.didModel.did);
 
-    const credentialRequest = {
-      header: {
-        alg: 'ES256K',
-        typ: 'JWT',
-        kid: did + '#' + didContext.didModel.signingKeyId
-      },
-      payload: {
-        iss: 'https://self-issued.me',
-        // 一旦固定値
-        aud: 'https://beta.did.msidentity.com/v1.0/f55d947c-0f8e-48d7-b1ea-b7f5c99291ce/verifiableCredential/card/issue',
-        contract: 'https://beta.did.msidentity.com/v1.0/f55d947c-0f8e-48d7-b1ea-b7f5c99291ce/verifiableCredential/contracts/VerifiedCredentialExpert',
-        iat: Date.now(),
-        exp: Date.now() + 600,
-        sub_jwk: JSON.parse(JSON.stringify(didInfo.didDocument.verificationMethod[0].publicKeyJwk)),
-        sub: VerifiableTool.generateSub(didInfo.didDocument.verificationMethod[0].publicKeyJwk),
-        jti: uuid.v4(),
-        did: did,
-        pin: VerifiableTool.generateHash(inputPin),
-        attestations: {
-          idTokens: {
-            'https://self-issued.me': vcProcess.credentialOffer.payload.id_token_hint
+      const credentialRequest = {
+        header: {
+          alg: 'ES256K',
+          typ: 'JWT',
+          kid: didContext.didModel.kid
+        },
+        payload: {
+          iss: 'https://self-issued.me',
+          aud: vcProcess.vcExpert.payload.input.credentialIssuer,
+          contract: vcProcess.vcExpert.payload.display.contract,
+          iat: Date.now(),
+          exp: Date.now() + 600,
+          sub_jwk: JSON.parse(JSON.stringify(didInfo.didDocument.verificationMethod[0].publicKeyJwk)),
+          sub: VerifiableTool.generateSub(didInfo.didDocument.verificationMethod[0].publicKeyJwk),
+          jti: uuid.v4(),
+          did: didContext.didModel.did,
+          pin: VerifiableTool.generateHash(inputPin),
+          attestations: {
+            idTokens: {
+              'https://self-issued.me': vcProcess.credentialOffer.payload.id_token_hint
+            }
           }
         }
-      }
+      };
+
+      // To Micfosoft向けの置換
+      if (credentialRequest.payload.aud.indexOf('/api/issuer/card') > -1) {
+        credentialRequest.payload.aud = 'https://beta.did.msidentity.com/v1.0/f55d947c-0f8e-48d7-b1ea-b7f5c99291ce/verifiableCredential/card/issue';
+      };
+
+      console.log(credentialRequest);
+
+      // 秘密鍵で署名
+      const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
+      const credentialRequestJws = await VerifiableTool.signJws(credentialRequest.header, credentialRequest.payload, privateKeyModel?.privateKey);
+      console.log(credentialRequestJws);
+
+      const response = await fetch(vcProcess.vcExpert.payload.input.credentialIssuer, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-cache',
+        body: credentialRequestJws,
+      });
+
+      const resJson = await response.json();
+      const jwt = VerifiableTool.decodeJWS(resJson.vc);
+      console.log(jwt);
+
+      // VCの保存
+      await VcTool.save(jwt);
+
+      setStatus(STATUS.VC_RECEIVED);
+    } catch (e) {
+      alert(e);
     };
-    console.log(credentialRequest);
-
-    // 秘密鍵で署名
-    const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
-    const credentialRequestJws = await VerifiableTool.signJws(credentialRequest.header, credentialRequest.payload, privateKeyModel?.privateKey);
-    console.log(credentialRequestJws);
-
-    const response = await fetch(vcProcess.credentialIssuerUrl, {
-      method: 'POST',
-      mode: 'cors',
-      cache: 'no-cache',
-      body: credentialRequestJws,
-    });
-
-    const resJson = await response.json();
-    const jwt = VerifiableTool.decodeJWS(resJson.vc);
-    console.log(jwt);
-
-    // VCの保存
-    await VcTool.save(jwt);
 
     setTimeout(() => {
       nowLoadingContext.setNowLoading(false);
-      setFinished(true);
     }, 300);
   };
 
@@ -158,6 +181,7 @@ export const PageQr = () => {
         if (result) {
           console.log(result);
           setQrText(result.getText());
+          issueVc(result.getText());
         }
       }}
     />
@@ -187,7 +211,7 @@ export const PageQr = () => {
       </Container>
       <Container maxWidth='sm' sx={{marginTop: '16px'}}>
         <TextField id='input-text' label='URL(openid://vc/)' fullWidth multiline maxRows={6} size='small' value={inputText} onChange={handleChange} />
-        <Button variant='contained' sx={{marginTop: '8px'}} onClick={issueVc}>手入力</Button>
+        <Button variant='contained' sx={{marginTop: '8px'}} onClick={manualInput}>手入力</Button>
       </Container>
     </Container>
   );
@@ -211,7 +235,9 @@ export const PageQr = () => {
         </CardContent>
       </Card>
       <Typography sx={{marginTop: '16px'}}>Do you want to get your Verified Credential?</Typography>
-      <TextField id='input-pin' label='PIN' fullWidth sx={{marginTop: '16px'}} value={inputPin} onChange={handleChange} />
+      <TextField id='input-pin' label='PIN' fullWidth sx={{marginTop: '16px'}} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+        value={inputPin} onChange={handleChange} 
+      />
       <Grid container spacing={2} sx={{marginTop: '16px'}}>
         <Grid item xs={6}>
           <Button variant='outlined' fullWidth onClick={() => navigate('/')}>キャンセル</Button>
@@ -234,11 +260,11 @@ export const PageQr = () => {
     </Container>
   );
 
-  if (isFinished) {
+  if (status === STATUS.VC_RECEIVED) {
     return vcComp;
   }
 
-  if (vcProcess.credentialIssuerUrl) {
+  if (status === STATUS.VC_CONFIRM) {
     return vcConfirm;
   }
 

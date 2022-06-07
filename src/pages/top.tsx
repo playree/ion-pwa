@@ -7,7 +7,7 @@ import {
 } from '@mui/icons-material'
 
 import { Settings } from '../helpers/settings';
-import { DidTool, PrivateKeyTool } from '../helpers/didTools';
+import { DidTool, PrivateKeyTool, VcTool } from '../helpers/didTools';
 import { useNowLoadingContext, useSettingsContext, useDidContext } from '../layout/sideMenuLayout';
 
 export const PageTop = () => {
@@ -59,7 +59,7 @@ export const PageTop = () => {
     nowLoadingContext.setNowLoading(true);
     
     // DID発行
-    const didInfo = await DidTool.create(settingsContext.settings.urlOperation);
+    const didInfo = await DidTool.create(settingsContext.settings.urlOperation, 'sign-primary-key');
     
     if (didInfo) {
       // 発行した各種情報を保存
@@ -82,7 +82,7 @@ export const PageTop = () => {
     if (!didContext.didModel) {
       return
     }
-    return await _resolveDid(didContext.didModel.did);
+    return await _resolveDid(didContext.didModel.didShort);
   };
 
   const resolveDidLong = async () => {
@@ -127,6 +127,7 @@ export const PageTop = () => {
     nowLoadingContext.setNowLoading(true);
 
     // 発行した各種情報を削除
+    await VcTool.clear();
     await PrivateKeyTool.clear();
     await DidTool.clear();
 
@@ -182,7 +183,7 @@ export const PageTop = () => {
                   label='DID'
                   fullWidth
                   multiline
-                  value={didContext.didModel.did}
+                  value={didContext.didModel.didShort}
                   InputProps={{
                     readOnly: true,
                   }}

@@ -1,11 +1,14 @@
 import * as React from 'react';
+import { Navigate } from 'react-router-dom';
 import { Typography, Container, TextField, Accordion, AccordionSummary, AccordionDetails} from '@mui/material';
 import { 
   ExpandMore as IconExpandMore
 } from '@mui/icons-material'
+import { useDidContext } from '../layout/sideMenuLayout';
 import { VcModel, VcTool } from '../helpers/didTools';
 
 export const PageVc = () => {
+  const didContext = useDidContext();
   const [vcList, setVcList] = React.useState([] as VcModel[]);
 
   const setup = async () => {
@@ -19,10 +22,14 @@ export const PageVc = () => {
     }
   });
 
+  if (!didContext.didModel) {
+    return (<Navigate to="/" replace />);
+  };
+
   const items = [];
   for (var cnt = 0; cnt < vcList.length; cnt++) {
     items.push(
-      <Accordion>
+      <Accordion key={'ac_' + cnt}>
         <AccordionSummary expandIcon={<IconExpandMore />}>
           <Typography>VC {cnt}</Typography>
         </AccordionSummary>
