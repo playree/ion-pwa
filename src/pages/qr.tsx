@@ -66,10 +66,15 @@ export const PageQr = () => {
   const issueVc = async (requestUrl: string) => {
     if (!settingsContext.settings) {
       return
-    }
+    };
     if (!didContext.didModel) {
       return
-    }
+    };
+
+    if (requestUrl.indexOf('openid://vc/') !== 0) {
+      alert('openid://vc/ 形式のみ有効です')
+      return;
+    };
 
     try {
       nowLoadingContext.setNowLoading(true);
@@ -87,8 +92,8 @@ export const PageQr = () => {
         vcExpert: vcExpert
       });
       setStatus(STATUS.VC_CONFIRM);
-    } catch (e) {
-      alert(e);
+    } catch (e: any) {
+      alert(e.message || e);
     };
 
     // ここで内容をユーザーに提示し、確認を行う
@@ -157,6 +162,10 @@ export const PageQr = () => {
         body: credentialRequestJws,
       });
 
+      if (response.status !== 200) {
+        throw Error(await response.text());
+      }
+
       const resJson = await response.json();
       const jwt = VerifiableTool.decodeJWS(resJson.vc);
       console.log(jwt);
@@ -165,8 +174,8 @@ export const PageQr = () => {
       await VcTool.save(jwt);
 
       setStatus(STATUS.VC_RECEIVED);
-    } catch (e) {
-      alert(e);
+    } catch (e: any) {
+      alert(e.message || e);
     };
 
     setTimeout(() => {
@@ -181,7 +190,11 @@ export const PageQr = () => {
         if (result) {
           console.log(result);
           setQrText(result.getText());
-          issueVc(result.getText());
+          setStatus(STATUS.QR_READED);
+
+          if (result.getText().indexOf('openid://vc/') === 0) {
+            issueVc(result.getText());
+          };
         }
       }}
     />
@@ -206,8 +219,9 @@ export const PageQr = () => {
         QR読み取り
       </Typography>
       <Container maxWidth='sm'>
-        { !qrText && qr }
-        { qrText && qrResult }
+        {/* { !qrText && qr }
+        { qrText && qrResult } */}
+        { status === STATUS.QR_READED ? qrResult : qr }
       </Container>
       <Container maxWidth='sm' sx={{marginTop: '16px'}}>
         <TextField id='input-text' label='URL(openid://vc/)' fullWidth multiline maxRows={6} size='small' value={inputText} onChange={handleChange} />

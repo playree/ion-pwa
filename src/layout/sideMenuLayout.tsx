@@ -19,7 +19,7 @@ import { NavLink } from 'react-router-dom';
 import { Settings } from '../helpers/settings';
 import { DidModel } from '../helpers/didTools';
 
-const buildNo = '20220607.003';
+const buildNo = '20220607.004';
 const drawerWidth = 200;
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
