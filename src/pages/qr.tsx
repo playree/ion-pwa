@@ -43,19 +43,42 @@ export const PageQr = () => {
   };
 
   const getCredentialOffer = async (url: string) => {
+    if (!settingsContext.settings) {
+      throw new Error('Not initialized');
+    };
+
+    // 取得
     const parsed = QueryString.parseUrl(url);
     const response = await fetch(parsed.query.request_uri as string);
     const body = await response.text();
-    const jwt = VerifiableTool.decodeJWS(body);
+    const jwt = VerifiableTool.decodeJws(body);
     console.log(jwt);
+
+    // 署名検証
+    if (! await VerifiableTool.verifyJwsByDid(jwt, settingsContext.settings.urlResolve)) {
+      throw new Error('verifyJwsByDid NG: CredentialOffer');
+    };
+    console.log('verifyJwsByDid OK');
+
     return jwt;
   };
 
   const getVCExpert = async (url: string) => {
+    if (!settingsContext.settings) {
+      throw new Error('Not initialized');
+    };
+
     const response = await fetch(url);
     const resJson = await response.json();
-    const jwt = VerifiableTool.decodeJWS(resJson.token);
+    const jwt = VerifiableTool.decodeJws(resJson.token);
     console.log(jwt);
+
+    // 署名検証
+    if (! await VerifiableTool.verifyJwsByDid(jwt, settingsContext.settings.urlResolve)) {
+      throw new Error('verifyJwsByDid NG: CredentialOffer');
+    };
+    console.log('verifyJwsByDid OK');
+
     return jwt;
   };
 
@@ -153,7 +176,7 @@ export const PageQr = () => {
       // 秘密鍵で署名
       const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
       const credentialRequestJws = await VerifiableTool.signJws(credentialRequest.header, credentialRequest.payload, privateKeyModel?.privateKey);
-      console.log(credentialRequestJws);
+      //console.log(credentialRequestJws);
 
       const response = await fetch(vcProcess.vcExpert.payload.input.credentialIssuer, {
         method: 'POST',
@@ -167,8 +190,14 @@ export const PageQr = () => {
       }
 
       const resJson = await response.json();
-      const jwt = VerifiableTool.decodeJWS(resJson.vc);
+      const jwt = VerifiableTool.decodeJws(resJson.vc);
       console.log(jwt);
+
+      // 署名検証
+      if (! await VerifiableTool.verifyJwsByDid(jwt, settingsContext.settings.urlResolve)) {
+        throw new Error('verifyJwsByDid NG: CredentialOffer');
+      };
+      console.log('verifyJwsByDid OK');
 
       // VCの保存
       await VcTool.save(jwt);
@@ -213,14 +242,60 @@ export const PageQr = () => {
     </Card>
   );
 
-  const qrRead = (
+  if (status === STATUS.VC_RECEIVED) {
+    return (
+      <Container maxWidth='sm' sx={{paddingX: '8px'}}>
+        <Typography variant='h5' sx={{marginBottom: '16px'}}>
+          VC受け取り完了
+        </Typography>
+        <Typography>
+          VCをウォレットに登録しました。
+        </Typography>
+      </Container>
+    );
+  }
+
+  if (status === STATUS.VC_CONFIRM) {
+    return (
+      <Container maxWidth='sm' sx={{paddingX: '8px'}}>
+        <Typography variant='h5' sx={{marginBottom: '16px'}}>
+          VC発行確認
+        </Typography>
+        <Card sx={{bgcolor: vcProcess.vcExpert.payload.display.card.backgroundColor}}>
+          <CardHeader 
+          avatar={<Avatar src={vcProcess.vcExpert.payload.display.card.logo.uri} />}
+          title={vcProcess.vcExpert.payload.display.card.title}
+          sx={{color: vcProcess.vcExpert.payload.display.card.textColor}}
+          />
+          <CardContent>
+            <Typography sx={{color: vcProcess.vcExpert.payload.display.card.textColor}}>
+              <br/>
+              Microsoft
+            </Typography>
+          </CardContent>
+        </Card>
+        <Typography sx={{marginTop: '16px'}}>{vcProcess.vcExpert.payload.display.consent.title}</Typography>
+        <TextField id='input-pin' label='PIN' fullWidth sx={{marginTop: '16px'}} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+          value={inputPin} onChange={handleChange} 
+        />
+        <Grid container spacing={2} sx={{marginTop: '16px'}}>
+          <Grid item xs={6}>
+            <Button variant='outlined' fullWidth onClick={() => navigate('/')}>キャンセル</Button>
+          </Grid>
+          <Grid item xs={6}>
+            <Button variant='contained' fullWidth onClick={addVC}>追加</Button>
+          </Grid>
+        </Grid>
+      </Container>
+    );
+  }
+
+  return (
     <Container maxWidth='sm' sx={{paddingX: '8px'}}>
       <Typography variant='h5' sx={{marginBottom: '16px'}}>
         QR読み取り
       </Typography>
       <Container maxWidth='sm'>
-        {/* { !qrText && qr }
-        { qrText && qrResult } */}
         { status === STATUS.QR_READED ? qrResult : qr }
       </Container>
       <Container maxWidth='sm' sx={{marginTop: '16px'}}>
@@ -229,58 +304,4 @@ export const PageQr = () => {
       </Container>
     </Container>
   );
-
-  const vcConfirm = (
-    <Container maxWidth='sm' sx={{paddingX: '8px'}}>
-      <Typography variant='h5' sx={{marginBottom: '16px'}}>
-        VC発行確認
-      </Typography>
-      <Card sx={{bgcolor: '#2E4053'}}>
-        <CardHeader 
-        avatar={<Avatar src='https://didcustomerplayground.blob.core.windows.net/public/VerifiedCredentialExpert_icon.png' />}
-        title='Verified Credential Expert'
-        sx={{color: 'white'}}
-        />
-        <CardContent>
-          <Typography sx={{color: 'white'}}>
-            <br/>
-            Microsoft
-          </Typography>
-        </CardContent>
-      </Card>
-      <Typography sx={{marginTop: '16px'}}>Do you want to get your Verified Credential?</Typography>
-      <TextField id='input-pin' label='PIN' fullWidth sx={{marginTop: '16px'}} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-        value={inputPin} onChange={handleChange} 
-      />
-      <Grid container spacing={2} sx={{marginTop: '16px'}}>
-        <Grid item xs={6}>
-          <Button variant='outlined' fullWidth onClick={() => navigate('/')}>キャンセル</Button>
-        </Grid>
-        <Grid item xs={6}>
-          <Button variant='contained' fullWidth onClick={addVC}>追加</Button>
-        </Grid>
-      </Grid>
-    </Container>
-  );
-
-  const vcComp = (
-    <Container maxWidth='sm' sx={{paddingX: '8px'}}>
-      <Typography variant='h5' sx={{marginBottom: '16px'}}>
-        VC受け取り完了
-      </Typography>
-      <Typography>
-        VCをウォレットに登録しました。
-      </Typography>
-    </Container>
-  );
-
-  if (status === STATUS.VC_RECEIVED) {
-    return vcComp;
-  }
-
-  if (status === STATUS.VC_CONFIRM) {
-    return vcConfirm;
-  }
-
-  return qrRead;
 }

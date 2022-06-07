@@ -207,7 +207,7 @@ export class VcTool {
 };
 
 export class VerifiableTool {
-  static decodeJWS(jwsString: string): JWTObject {
+  static decodeJws(jwsString: string): JWTObject {
     const jwsParse = jwsString.split('.');
     return {
       header: JSON.parse(base64url.decode(jwsParse[0])),
@@ -249,6 +249,32 @@ export class VerifiableTool {
       default: throw new Error('Unsupported cryptographic type');
     };
   };
+
+  static async verifyJwsByDid(jwtObj: JWTObject, resolveUrl: string) {
+    try {
+      // HeaderのkidからDIDとverificationMethodのidを取得
+      const [did, vid] = jwtObj.header.kid.split('#');
+      
+      // DID DocumentからpublicKeyJwkを取得
+      const didInfo = await DidTool.resolve(resolveUrl, did);
+      let jwk;
+      for (const vm of didInfo.didDocument.verificationMethod) {
+        if (vm.id === ('#' + vid)) {
+          jwk = vm.publicKeyJwk;
+          break;
+        }
+      }
+      if (!jwk) {
+        return false;
+      };
+
+      // 署名検証
+      return await VerifiableTool.verifyJws(jwtObj.jws, jwk);
+    } catch (e) {
+      return false;
+    };
+  };
+
 }
 
 export type JWTObject = {
