@@ -11,16 +11,19 @@ export const PageVc = () => {
   const didContext = useDidContext();
   const [vcList, setVcList] = React.useState([] as VcModel[]);
 
+  React.useEffect(() => {
+    if (!vcList.length) {
+      setup();
+    };
+    return () => {
+      
+    };
+  });
+
   const setup = async () => {
     const vcList = await VcTool.all();
     setVcList(vcList);
   };
-
-  React.useEffect(() => {
-    if (!vcList.length) {
-      setup();
-    }
-  });
 
   if (!didContext.didModel) {
     return (<Navigate to="/" replace />);

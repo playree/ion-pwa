@@ -54,6 +54,9 @@ export const PageSettings = () => {
       setUrlOperation(settings.urlOperation);
       setUrlResolve(settings.urlResolve);
     });
+    return () => {
+      
+    };
   },[])
 
   return (

@@ -261,7 +261,7 @@ export const PageQr = () => {
         <Typography variant='h5' sx={{marginBottom: '16px'}}>
           VC発行確認
         </Typography>
-        <Card sx={{bgcolor: vcProcess.vcExpert.payload.display.card.backgroundColor}}>
+        <Card sx={{bgcolor: vcProcess.vcExpert.payload.display.card.backgroundColor, maxWidth: '360px', marginX: 'auto'}}>
           <CardHeader 
           avatar={<Avatar src={vcProcess.vcExpert.payload.display.card.logo.uri} />}
           title={vcProcess.vcExpert.payload.display.card.title}

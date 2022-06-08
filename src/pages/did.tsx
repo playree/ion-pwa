@@ -11,6 +11,15 @@ export const PageDid = () => {
   const didContext = useDidContext();
   const [privateKeys, setPrivateKeys] = React.useState({signing:'', recovery:'', update:''});
 
+  React.useEffect(() => {
+    if (!privateKeys.signing) {
+      setup();
+    }
+    return () => {
+      
+    };
+  });
+
   const setup = async () => {
     if (didContext.didModel) {
       setPrivateKeys({
@@ -20,12 +29,6 @@ export const PageDid = () => {
       });
     };
   };
-
-  React.useEffect(() => {
-    if (!privateKeys.signing) {
-      setup();
-    }
-  });
 
   if (!didContext.didModel) {
     return (<Navigate to="/" replace />);

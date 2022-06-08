@@ -19,6 +19,15 @@ export const PageTop = () => {
   const [openDialog, setOpenDialog] = React.useState(false);
   const [textDialog, setTextDialog] = React.useState({title:'', text:''});
 
+  React.useEffect(() => {
+    if (!settingsContext.settings) {
+      setup();
+    };
+    return () => {
+      
+    };
+  });
+
   const handleCloseDidCreated = (event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === 'clickaway') {
       return;
@@ -45,12 +54,6 @@ export const PageTop = () => {
       nowLoadingContext.setNowLoading(false);
     }, 300);
   };
-
-  React.useEffect(() => {
-    if (!settingsContext.settings) {
-      setup();
-    };
-  });
 
   const registerDid = async () => {
     if (!settingsContext.settings) {
