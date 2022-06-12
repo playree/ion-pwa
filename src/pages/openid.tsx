@@ -164,6 +164,9 @@ export const PageOpenid = () => {
 
       // 2. 対象のVCを抽出
       const vcList = await VcTool.all();
+      if (!vcList.length) {
+        throw Error('VC not found.')
+      }
 
       // 情報を一時保存
       setVpProcess({
