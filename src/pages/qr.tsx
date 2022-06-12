@@ -32,10 +32,10 @@ export const PageQr = () => {
   };
 
   const manualInput = async () => {
-    issueVc(inputText);
+    startOpenid(inputText);
   };
 
-  const issueVc = async (requestUrl: string) => {
+  const startOpenid = async (requestUrl: string) => {
     if (!settingsContext.settings) {
       return
     };
@@ -48,7 +48,7 @@ export const PageQr = () => {
       return;
     };
 
-    navigate('/issue/' + base64url.encode(requestUrl));
+    navigate('/openid/' + base64url.encode(requestUrl));
   }
 
   const qr = (
@@ -61,7 +61,7 @@ export const PageQr = () => {
           setStatus(STATUS.QR_READED);
 
           if (result.getText().indexOf('openid://vc') === 0) {
-            issueVc(result.getText());
+            startOpenid(result.getText());
           };
         }
       }}

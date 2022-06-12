@@ -23,7 +23,7 @@ type Params = {
   param: string;
 };
 
-export const PageVcIssue = () => {
+export const PageOpenid = () => {
   const { param } = useParams<Params>();
   const [status, setStatus] = React.useState(STATUS.INIT);
   const [inputPin, setInputPin] = React.useState('');
@@ -185,7 +185,7 @@ export const PageVcIssue = () => {
     try {
 
       // 2. オファーリクエストの検証
-      const manifestUrl = credentialOffer.payload.claims.vp_token.presentation_definition.input_descriptors[0].issuance[0].manifest;
+      const manifestUrl = credentialOffer.payload.claims.vp_token.presentation_definition.input_descriptors[0].issuance[0].manifest2;
       const vcExpert = await getVCExpert(manifestUrl);
 
       // 情報を一時保存
@@ -510,7 +510,7 @@ export const PageVcIssue = () => {
   return (
     <Container maxWidth='sm' sx={{ paddingX: '8px' }}>
       <Typography variant='h5' sx={{ marginBottom: '16px' }}>
-        
+        Loading . . .
       </Typography>
     </Container>
   );
