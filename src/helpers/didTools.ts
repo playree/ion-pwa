@@ -234,6 +234,12 @@ export class VerifiableTool {
     return md5.update(new Date().toString()).digest('hex');
   }
 
+  static generateNonce() {
+    const md5 = createHash('md5');
+    const hash = md5.update(new Date().toString()).digest();
+    return base64url.toBase64(base64url.encode(hash));
+  }
+
   static async signJws(header: any, payload: any, privateJwk: any){
     switch(privateJwk.crv){
       case 'secp256k1':

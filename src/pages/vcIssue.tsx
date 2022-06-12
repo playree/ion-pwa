@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Typography, Container, Card, CardContent, CardHeader, Button, TextField, Avatar, Grid } from '@mui/material';
 import { fetch } from 'cross-fetch';
 import * as QueryString from 'query-string';
-import { VerifiableTool, DidTool, PrivateKeyTool, VcTool, JWTObject } from '../helpers/didTools';
+import { VerifiableTool, DidTool, PrivateKeyTool, VcTool, JWTObject, VcModel } from '../helpers/didTools';
 import { useDidContext, useSettingsContext, useNowLoadingContext } from '../layout/sideMenuLayout';
 import * as uuid from 'uuid';
 import { useParams } from "react-router";
@@ -13,8 +13,10 @@ import { Settings } from '../helpers/settings';
 const STATUS = {
   INIT: 0,
   START: 1,
-  SIOP_CONFIRM: 11,
-  SIOP_RECEIVED: 12,
+  SIOP_VC_CONFIRM: 11,
+  SIOP_VC_RECEIVED: 12,
+  SIOP_VP_CONFIRM: 21,
+  SIOP_VP_VERIFIED: 22,
 };
 
 type Params = {
@@ -25,7 +27,14 @@ export const PageVcIssue = () => {
   const { param } = useParams<Params>();
   const [status, setStatus] = React.useState(STATUS.INIT);
   const [inputPin, setInputPin] = React.useState('');
-  const [vcProcess, setVcProcess] = React.useState({ credentialOffer: {} as JWTObject, vcExpert: {} as JWTObject });
+  const [vcProcess, setVcProcess] = React.useState({
+    credentialOffer: {} as JWTObject, 
+    vcExpert: {} as JWTObject,
+  });
+  const [vpProcess, setVpProcess] = React.useState({
+    credentialOffer: {} as JWTObject, 
+    vcList: [] as VcModel[],
+  });
 
   const didContext = useDidContext();
   const settingsContext = useSettingsContext();
@@ -56,7 +65,11 @@ export const PageVcIssue = () => {
 
       const requestUrl = base64url.decode(param);
       if (requestUrl.indexOf('openid://vc/') === 0) {
-        issueVc(requestUrl);
+        procVc(requestUrl);
+        return
+      }
+      if (requestUrl.indexOf('openid://vc2/') === 0) {
+        issueVc2(requestUrl);
         return
       }
     }
@@ -70,6 +83,17 @@ export const PageVcIssue = () => {
         setInputPin(() => e.target.value)
         break;
     }
+  };
+
+  const issueVc2 = async (requestUrl: string) => {
+    const parsed = QueryString.parseUrl(requestUrl);
+    const url = new URL(parsed.query.request_uri as string);
+    url.searchParams.append('response_type', 'code');
+    url.searchParams.append('client_id', 'xxx');
+    url.searchParams.append('scope', 'idToken');
+    url.searchParams.append('nonce', 'xxx');
+    //url.searchParams.append('redirect_uri', `${location.origin}/issue/` + base64url.encode('openidres://vc2/'));
+    window.location.href = url.toString();
   };
 
   const getCredentialOffer = async (url: string) => {
@@ -112,14 +136,7 @@ export const PageVcIssue = () => {
     return jwt;
   };
 
-  const issueVc = async (requestUrl: string) => {
-    if (!settingsContext.settings) {
-      return
-    };
-    if (!didContext.didModel) {
-      return
-    };
-
+  const procVc = async (requestUrl: string) => {
     if (requestUrl.indexOf('openid://vc/') !== 0) {
       alert('openid://vc/ 形式のみ有効です')
       return;
@@ -128,8 +145,44 @@ export const PageVcIssue = () => {
     try {
       nowLoadingContext.setNowLoading(true);
 
-      // 1. オファーリクエストを取得(Issure→HolderへのSIOP Request)
+      // 1. オファーリクエストを取得(Issure/Verifier→HolderへのSIOP Request)
       const credentialOffer = await getCredentialOffer(requestUrl);
+
+      if (credentialOffer.payload.prompt && credentialOffer.payload.prompt === 'create') {
+        issueVc(credentialOffer);
+      } else {
+        verifyVc(credentialOffer);
+      }
+    } catch (e: any) {
+      alert(e.message || e);
+      nowLoadingContext.setNowLoading(false);
+    };
+  }
+
+  const verifyVc = async (credentialOffer: JWTObject) => {
+    try {
+
+      // 2. 対象のVCを抽出
+      const vcList = await VcTool.all();
+
+      // 情報を一時保存
+      setVpProcess({
+        credentialOffer: credentialOffer,
+        vcList: vcList
+      });
+      setStatus(STATUS.SIOP_VP_CONFIRM);
+    } catch (e: any) {
+      alert(e.message || e);
+    };
+
+    // ここで内容をユーザーに提示し、確認を行う
+    setTimeout(() => {
+      nowLoadingContext.setNowLoading(false);
+    }, 300);
+  }
+
+  const issueVc = async (credentialOffer: JWTObject) => {
+    try {
 
       // 2. オファーリクエストの検証
       const manifestUrl = credentialOffer.payload.claims.vp_token.presentation_definition.input_descriptors[0].issuance[0].manifest;
@@ -140,7 +193,7 @@ export const PageVcIssue = () => {
         credentialOffer: credentialOffer,
         vcExpert: vcExpert
       });
-      setStatus(STATUS.SIOP_CONFIRM);
+      setStatus(STATUS.SIOP_VC_CONFIRM);
     } catch (e: any) {
       alert(e.message || e);
     };
@@ -166,6 +219,7 @@ export const PageVcIssue = () => {
 
       // 自身の公開鍵を取得
       const didInfo = await DidTool.resolve(settingsContext.settings.urlResolve, didContext.didModel.did);
+      const now = Math.floor(Date.now() / 1000);
 
       const credentialRequest = {
         header: {
@@ -177,8 +231,8 @@ export const PageVcIssue = () => {
           iss: 'https://self-issued.me',
           aud: vcProcess.vcExpert.payload.input.credentialIssuer,
           contract: vcProcess.vcExpert.payload.display.contract,
-          iat: Date.now(),
-          exp: Date.now() + 600,
+          iat: now,
+          exp: now + 600,
           sub_jwk: JSON.parse(JSON.stringify(didInfo.didDocument.verificationMethod[0].publicKeyJwk)),
           sub: VerifiableTool.generateSub(didInfo.didDocument.verificationMethod[0].publicKeyJwk),
           jti: uuid.v4(),
@@ -228,7 +282,7 @@ export const PageVcIssue = () => {
       // VCの保存
       await VcTool.save(jwt);
 
-      setStatus(STATUS.SIOP_RECEIVED);
+      setStatus(STATUS.SIOP_VC_RECEIVED);
     } catch (e: any) {
       alert(e.message || e);
     };
@@ -238,7 +292,122 @@ export const PageVcIssue = () => {
     }, 300);
   };
 
-  if (status === STATUS.SIOP_RECEIVED) {
+  const sendVP = async () => {
+    if (!settingsContext.settings) {
+      return
+    }
+    if (!didContext.didModel) {
+      return
+    }
+
+    // 3. レスポンス(Holder→VerifierへのSIOP Response)
+
+    try {
+      nowLoadingContext.setNowLoading(true);
+
+      // 自身の公開鍵を取得
+      const now = Math.floor(Date.now() / 1000);
+
+      const idToken = {
+        header: {
+          alg: 'ES256K',
+          typ: 'JWT',
+          kid: didContext.didModel.kid
+        },
+        payload: {
+          iss: 'https://self-issued.me/v2/openid-vc',
+          aud: vpProcess.credentialOffer.payload.client_id,
+          sub: didContext.didModel.did,
+          iat: now,
+          exp: now + 600,
+          nonce: vpProcess.credentialOffer.payload.nonce,
+          _vp_token: {
+            presentation_submission: {
+              id: uuid.v4(),
+              definition_id: uuid.v4(),
+              descriptor_map: [
+                {
+                  id: 'VerifiedCredentialExpert',
+                  format: 'jwt_vp',
+                  path: '$',
+                  'path_nested': {
+                    id: 'VerifiedCredentialExpert',
+                    format: 'jwt_vc',
+                    path: '$.verifiableCredential[0]'
+                  }
+                }
+              ]
+            }
+          }
+        }
+      };
+
+      console.log(idToken);
+
+      // 秘密鍵で署名
+      const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
+      const idTokenJws = await VerifiableTool.signJws(idToken.header, idToken.payload, privateKeyModel?.privateKey);
+
+      const vpToken = {
+        header: {
+          alg: 'ES256K',
+          typ: 'JWT',
+          kid: didContext.didModel.kid
+        },
+        payload: {
+          iss: didContext.didModel.did,
+          aud: vpProcess.credentialOffer.payload.client_id,
+          iat: now,
+          nbf: now,
+          exp: now + 600,
+          nonce: vpProcess.credentialOffer.payload.nonce,
+          vp: {
+            '@context': [
+              'https://www.w3.org/2018/credentials/v1'
+            ],
+            type: [
+              'VerifiablePresentation'
+            ],
+            verifiableCredential: [
+              vpProcess.vcList[0].vc.jws
+            ]
+          }
+        }
+      };
+
+      console.log(vpToken);
+
+      // 秘密鍵で署名
+      //const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
+      const vpTokenJws = await VerifiableTool.signJws(vpToken.header, vpToken.payload, privateKeyModel?.privateKey);
+
+      const params = new URLSearchParams();
+      params.append('id_token', idTokenJws);
+      params.append('vp_token', vpTokenJws);
+      params.append('state', vpProcess.credentialOffer.payload.state);
+
+      const response = await fetch(vpProcess.credentialOffer.payload.redirect_uri, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-cache',
+        body: params,
+      });
+
+      if (response.status !== 200) {
+        throw Error(await response.text());
+      }
+
+      setStatus(STATUS.SIOP_VP_VERIFIED);
+    } catch (e: any) {
+      alert(e.message || e);
+    };
+
+    setTimeout(() => {
+      nowLoadingContext.setNowLoading(false);
+    }, 300);
+  };
+
+  if (status === STATUS.SIOP_VC_RECEIVED) {
     return (
       <Container maxWidth='sm' sx={{ paddingX: '8px' }}>
         <Typography variant='h5' sx={{ marginBottom: '16px' }}>
@@ -251,7 +420,7 @@ export const PageVcIssue = () => {
     );
   }
 
-  if (status === STATUS.SIOP_CONFIRM) {
+  if (status === STATUS.SIOP_VC_CONFIRM) {
     return (
       <Container maxWidth='sm' sx={{ paddingX: '8px' }}>
         <Typography variant='h5' sx={{ marginBottom: '16px' }}>
@@ -286,10 +455,62 @@ export const PageVcIssue = () => {
     );
   }
 
+  if (status === STATUS.SIOP_VP_CONFIRM) {
+    return (
+      <Container maxWidth='sm' sx={{ paddingX: '8px' }}>
+        <Typography variant='h5' sx={{ marginBottom: '16px' }}>
+          VC提示確認
+        </Typography>
+        <Card variant='outlined'>
+          <CardContent>
+            <Typography sx={{ marginBottom: '16px' }}>
+              提示条件
+            </Typography>
+            <TextField
+              label='input_descriptors'
+              fullWidth
+              multiline
+              maxRows={8}
+              value={JSON.stringify(vpProcess.credentialOffer.payload.claims.vp_token.presentation_definition.input_descriptors, null, 2)}
+              InputProps={{
+                readOnly: true,
+                sx: {fontSize: '12px'}
+              }}
+            />
+          </CardContent>
+        </Card>
+        <Typography sx={{ marginTop: '16px' }}>
+          
+        </Typography>
+        <Grid container spacing={2} sx={{ marginTop: '16px' }}>
+          <Grid item xs={6}>
+            <Button variant='outlined' fullWidth onClick={() => navigate('/')}>キャンセル</Button>
+          </Grid>
+          <Grid item xs={6}>
+            <Button variant='contained' fullWidth onClick={sendVP}>提示</Button>
+          </Grid>
+        </Grid>
+      </Container>
+    );
+  };
+
+  if (status === STATUS.SIOP_VP_VERIFIED) {
+    return (
+      <Container maxWidth='sm' sx={{ paddingX: '8px' }}>
+        <Typography variant='h5' sx={{ marginBottom: '16px' }}>
+          VC提示完了
+        </Typography>
+        <Typography>
+          VCの提示が完了しました。
+        </Typography>
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth='sm' sx={{ paddingX: '8px' }}>
       <Typography variant='h5' sx={{ marginBottom: '16px' }}>
-        VC発行
+        
       </Typography>
     </Container>
   );

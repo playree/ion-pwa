@@ -43,8 +43,8 @@ export const PageQr = () => {
       return
     };
 
-    if (requestUrl.indexOf('openid://vc/') !== 0) {
-      alert('openid://vc/ 形式のみ有効です')
+    if (requestUrl.indexOf('openid://') !== 0) {
+      alert('openid:// 形式のみ有効です')
       return;
     };
 
@@ -60,7 +60,7 @@ export const PageQr = () => {
           setQrText(result.getText());
           setStatus(STATUS.QR_READED);
 
-          if (result.getText().indexOf('openid://vc/') === 0) {
+          if (result.getText().indexOf('openid://vc') === 0) {
             issueVc(result.getText());
           };
         }
@@ -90,7 +90,7 @@ export const PageQr = () => {
         { status === STATUS.QR_READED ? qrResult : qr }
       </Container>
       <Container maxWidth='sm' sx={{marginTop: '16px'}}>
-        <TextField id='input-text' label='URL(openid://vc/)' fullWidth multiline maxRows={6} size='small' value={inputText} onChange={handleChange} />
+        <TextField id='input-text' label='URL(openid://)' fullWidth multiline maxRows={6} size='small' value={inputText} onChange={handleChange} />
         <Button variant='contained' sx={{marginTop: '8px'}} onClick={manualInput}>手入力</Button>
       </Container>
     </Container>
