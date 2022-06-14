@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Container, Card, CardContent, CardHeader, Button, TextField, Avatar, Grid } from '@mui/material';
 import { fetch } from 'cross-fetch';
 import * as QueryString from 'query-string';
@@ -24,6 +24,7 @@ type Params = {
 };
 
 export const PageOpenid = () => {
+  const search = useLocation().search;
   const { param } = useParams<Params>();
   const [status, setStatus] = React.useState(STATUS.INIT);
   const [inputPin, setInputPin] = React.useState('');
@@ -42,17 +43,35 @@ export const PageOpenid = () => {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    if (status === STATUS.INIT) {
-      nowLoadingContext.setNowLoading(true);
-      handleProc();
+    console.log(status);
+    switch (status) {
+      case STATUS.INIT:
+        nowLoadingContext.setNowLoading(true);
+        init();
+        break;
+      case STATUS.START:
+        handleProc();
+        break;
     };
-    return () => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
+  const init = async () => {
+    if (status === STATUS.INIT) {
+      // 設定の読み込み
+      settingsContext.setSettings(await Settings.load());
+
+      // DIDの読み込み
+      const didModel = await DidTool.load();
+      if (didModel) {
+        didContext.setDidModel(didModel);
+      }
+      setStatus(STATUS.START);
     };
-  });
+  };
 
   const handleProc = async () => {
-    setStatus(STATUS.START);
+    //setStatus(STATUS.START);
     if (param) {
       // 設定の読み込み
       settingsContext.setSettings(await Settings.load());
@@ -70,6 +89,10 @@ export const PageOpenid = () => {
       }
       if (requestUrl.indexOf('openid://vc2/') === 0) {
         issueVc2(requestUrl);
+        return
+      }
+      if (requestUrl.indexOf('openidres://vc2/') === 0) {
+        resVc2();
         return
       }
     }
@@ -92,8 +115,100 @@ export const PageOpenid = () => {
     url.searchParams.append('client_id', 'xxx');
     url.searchParams.append('scope', 'idToken');
     url.searchParams.append('nonce', 'xxx');
-    //url.searchParams.append('redirect_uri', `${location.origin}/issue/` + base64url.encode('openidres://vc2/'));
+    url.searchParams.append('redirect_uri', `${window.location.origin}/openid/` + base64url.encode('openidres://vc2/'));
     window.location.href = url.toString();
+  };
+
+  const resVc2 = async () => {
+    if (!settingsContext.settings) {
+      return
+    }
+    if (!didContext.didModel) {
+      return
+    }
+  
+    try {
+      const query = new URLSearchParams(search);
+
+      const resToken = await fetch('https://ssird-issuer.com/token', {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          grant_type: 'suthorization_code',
+          client_id: 'xxx',
+          client_secret: 'yyy',
+          code: query.get('code')
+        }),
+      });
+      const tokenObj = await resToken.json();
+      console.log(tokenObj);
+
+      // 自身の公開鍵を取得
+      //const didInfo = await DidTool.resolve(settingsContext.settings.urlResolve, didContext.didModel.did);
+      const now = Math.floor(Date.now() / 1000);
+
+      const reqVc = {
+        header: {
+          alg: 'ES256K',
+          typ: 'JWT',
+          kid: didContext.didModel.kid
+        },
+        payload: {
+          iss: 'xxx',
+          aud: 'https://ssird-issuer.com',
+          iat: now,
+          exp: now + 600,
+          nonce: tokenObj.nonce
+        }
+      };
+
+      console.log(reqVc);
+
+      // 秘密鍵で署名
+      const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
+      const reqVcJws = await VerifiableTool.signJws(reqVc.header, reqVc.payload, privateKeyModel?.privateKey);
+
+      const resVc = await fetch('https://ssird-issuer.com/vc', {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          proof_type: 'jwt',
+          jwt: reqVcJws
+        }),
+      });
+      const vcObj = await resVc.json();
+      console.log(vcObj);
+
+      const jwt = VerifiableTool.decodeJws(vcObj.vc);
+      console.log(jwt);
+
+      // 署名検証
+      // if (! await VerifiableTool.verifyJwsByDid(jwt, settingsContext.settings.urlResolve)) {
+      //   throw new Error('verifyJwsByDid NG: CredentialOffer');
+      // };
+      // console.log('verifyJwsByDid OK');
+
+      // VCの保存
+      await VcTool.save(jwt);
+
+      setStatus(STATUS.SIOP_VC_RECEIVED);
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || e);
+    };
+
+    setTimeout(() => {
+      nowLoadingContext.setNowLoading(false);
+    }, 300);
+
   };
 
   const getCredentialOffer = async (url: string) => {
@@ -154,6 +269,7 @@ export const PageOpenid = () => {
         verifyVc(credentialOffer);
       }
     } catch (e: any) {
+      console.error(e);
       alert(e.message || e);
       nowLoadingContext.setNowLoading(false);
     };
@@ -175,6 +291,7 @@ export const PageOpenid = () => {
       });
       setStatus(STATUS.SIOP_VP_CONFIRM);
     } catch (e: any) {
+      console.error(e);
       alert(e.message || e);
     };
 
@@ -198,6 +315,7 @@ export const PageOpenid = () => {
       });
       setStatus(STATUS.SIOP_VC_CONFIRM);
     } catch (e: any) {
+      console.error(e);
       alert(e.message || e);
     };
 
@@ -287,6 +405,7 @@ export const PageOpenid = () => {
 
       setStatus(STATUS.SIOP_VC_RECEIVED);
     } catch (e: any) {
+      console.error(e);
       alert(e.message || e);
     };
 
@@ -402,6 +521,7 @@ export const PageOpenid = () => {
 
       setStatus(STATUS.SIOP_VP_VERIFIED);
     } catch (e: any) {
+      console.error(e);
       alert(e.message || e);
     };
 
