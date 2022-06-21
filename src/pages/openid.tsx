@@ -6,7 +6,7 @@ import * as QueryString from 'query-string';
 import { VerifiableTool, DidTool, PrivateKeyTool, VcTool, JWTObject, VcModel } from '../helpers/didTools';
 import { useDidContext, useSettingsContext, useNowLoadingContext } from '../layout/sideMenuLayout';
 import * as uuid from 'uuid';
-import { useParams } from "react-router";
+import { useParams } from 'react-router';
 import base64url from 'base64url';
 import { Settings } from '../helpers/settings';
 
@@ -116,6 +116,11 @@ export const PageOpenid = () => {
     url.searchParams.append('scope', 'idToken');
     url.searchParams.append('nonce', 'xxx');
     url.searchParams.append('redirect_uri', `${window.location.origin}/openid/` + base64url.encode('openidres://vc2/'));
+    url.searchParams.append('authorization_details', JSON.stringify({
+      'type': 'openid_credential', 
+      'credential_type':'https://ssird-issuer.com/nameCard', 
+      'format':'jwt_vc'
+    }))
     window.location.href = url.toString();
   };
 
@@ -177,7 +182,8 @@ export const PageOpenid = () => {
         mode: 'cors',
         cache: 'no-cache',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokenObj.access_token}`
         },
         body: JSON.stringify({
           proof_type: 'jwt',
@@ -187,14 +193,14 @@ export const PageOpenid = () => {
       const vcObj = await resVc.json();
       console.log(vcObj);
 
-      const jwt = VerifiableTool.decodeJws(vcObj.vc);
+      const jwt = VerifiableTool.decodeJws(vcObj.credential);
       console.log(jwt);
 
       // 署名検証
-      // if (! await VerifiableTool.verifyJwsByDid(jwt, settingsContext.settings.urlResolve)) {
-      //   throw new Error('verifyJwsByDid NG: CredentialOffer');
-      // };
-      // console.log('verifyJwsByDid OK');
+      if (! await VerifiableTool.verifyJwsByDid(jwt, settingsContext.settings.urlResolve)) {
+        throw new Error('verifyJwsByDid NG: CredentialOffer');
+      };
+      console.log('verifyJwsByDid OK');
 
       // VCの保存
       await VcTool.save(jwt);
