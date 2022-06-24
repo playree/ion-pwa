@@ -10,6 +10,7 @@ import { useParams } from 'react-router';
 import base64url from 'base64url';
 import { Settings } from '../helpers/settings';
 
+// @todo 
 const STATUS = {
   INIT: 0,
   START: 1,
@@ -17,6 +18,8 @@ const STATUS = {
   SIOP_VC_RECEIVED: 12,
   SIOP_VP_CONFIRM: 21,
   SIOP_VP_VERIFIED: 22,
+  SIOP_VP2_CONFIRM: 31,
+  SIOP_VP2_VERIFIED: 32,
 };
 
 type Params = {
@@ -91,6 +94,10 @@ export const PageOpenid = () => {
         issueVc2(requestUrl);
         return
       }
+      if (requestUrl.indexOf('openid://vc3/') === 0) {
+        verifyVc2(requestUrl);
+        return
+      }
       if (requestUrl.indexOf('openidres://vc2/') === 0) {
         resVc2();
         return
@@ -135,7 +142,8 @@ export const PageOpenid = () => {
     try {
       const query = new URLSearchParams(search);
 
-      const resToken = await fetch('https://ssird-issuer.com/token', {
+      //const resToken = await fetch('https://ssird-issuer.com/token', {
+        const resToken = await fetch('https://120d-113-149-183-145.jp.ngrok.io/token', {
         method: 'POST',
         mode: 'cors',
         cache: 'no-cache',
@@ -177,7 +185,8 @@ export const PageOpenid = () => {
       const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
       const reqVcJws = await VerifiableTool.signJws(reqVc.header, reqVc.payload, privateKeyModel?.privateKey);
 
-      const resVc = await fetch('https://ssird-issuer.com/vc', {
+      //const resVc = await fetch('https://ssird-issuer.com/vc', {
+        const resVc = await fetch('https://120d-113-149-183-145.jp.ngrok.io/vc', {
         method: 'POST',
         mode: 'cors',
         cache: 'no-cache',
@@ -215,6 +224,48 @@ export const PageOpenid = () => {
       nowLoadingContext.setNowLoading(false);
     }, 300);
 
+  };
+
+  const verifyVc2 = async (requestUrl: string) => {
+    try {
+      nowLoadingContext.setNowLoading(true);
+
+      if (!settingsContext.settings) {
+        throw new Error('Not initialized');
+      };
+
+      const parsed = QueryString.parseUrl(requestUrl);
+      const jwt = VerifiableTool.decodeJws(parsed.query.request as string);
+      console.log(jwt);
+
+      // 署名検証
+      if (! await VerifiableTool.verifyJwsByDid(jwt, settingsContext.settings.urlResolve)) {
+        // throw new Error('verifyJwsByDid NG: CredentialOffer');
+        alert('verifyJwsByDid NG');
+      };
+      console.log('verifyJwsByDid OK');
+
+      // 2. 対象のVCを抽出
+      const vcList = await VcTool.all();
+      if (!vcList.length) {
+        throw Error('VC not found.')
+      }
+
+      // 情報を一時保存
+      setVpProcess({
+        credentialOffer: jwt,
+        vcList: vcList
+      });
+      setStatus(STATUS.SIOP_VP2_CONFIRM);
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || e);
+    };
+    
+    // ここで内容をユーザーに提示し、確認を行う
+    setTimeout(() => {
+      nowLoadingContext.setNowLoading(false);
+    }, 300);
   };
 
   const getCredentialOffer = async (url: string) => {
@@ -433,7 +484,6 @@ export const PageOpenid = () => {
     try {
       nowLoadingContext.setNowLoading(true);
 
-      // 自身の公開鍵を取得
       const now = Math.floor(Date.now() / 1000);
 
       const idToken = {
@@ -536,6 +586,127 @@ export const PageOpenid = () => {
     }, 300);
   };
 
+  const sendVP2 = async () => {
+    if (!settingsContext.settings) {
+      return
+    }
+    if (!didContext.didModel) {
+      return
+    }
+
+    // 3. レスポンス(Holder→VerifierへのSIOP Response)
+
+    try {
+      nowLoadingContext.setNowLoading(true);
+
+      // 自身の公開鍵を取得
+      const didInfo = await DidTool.resolve(settingsContext.settings.urlResolve, didContext.didModel.did);
+      const now = Math.floor(Date.now() / 1000);
+
+      const idToken = {
+        header: {
+          alg: 'ES256K',
+          typ: 'JWT',
+          kid: didContext.didModel.kid
+        },
+        payload: {
+          iss: 'https://self-issued.me/v2',
+          aud: vpProcess.credentialOffer.payload.client_id,
+          sub: VerifiableTool.generateSub(didInfo.didDocument.verificationMethod[0].publicKeyJwk),
+          sub_jwk: JSON.parse(JSON.stringify(didInfo.didDocument.verificationMethod[0].publicKeyJwk)),
+          iat: now,
+          exp: now + 600,
+          auth_time: now,
+          nonce: vpProcess.credentialOffer.payload.nonce,
+          _vp_token: {
+            presentation_submission: {
+              id: uuid.v4(),
+              definition_id: uuid.v4(),
+              descriptor_map: [
+                {
+                  id: 'VerifiedCredentialExpert',
+                  format: 'ldp_vp',
+                  path: '$',
+                  path_nested: {
+                    format: 'ldp_vc',
+                    path: '$.verifiableCredential[0]'
+                  }
+                }
+              ]
+            }
+          }
+        }
+      };
+
+      console.log(idToken);
+
+      // 秘密鍵で署名
+      const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
+      const idTokenJws = await VerifiableTool.signJws(idToken.header, idToken.payload, privateKeyModel?.privateKey);
+
+      const vpToken = {
+        header: {
+          alg: 'ES256K',
+          typ: 'JWT',
+          kid: didContext.didModel.kid
+        },
+        payload: {
+          '@context': [
+            'https://www.w3.org/2018/credentials/v1'
+          ],
+          type: [
+            'VerifiablePresentation'
+          ],
+          verifiableCredential: [
+            vpProcess.vcList[0].vc.payload
+          ],
+          id: 'ebc6f1c2',
+          holder: didContext.didModel.did,
+          proof: {
+            type: "Ed25519Signature2018",
+            created: new Date().toISOString(),
+            challenge: vpProcess.credentialOffer.payload.nonce,
+            domain: vpProcess.credentialOffer.payload.client_id,
+            jws: vpProcess.vcList[0].vc.jws,
+            proofPurpose: 'authentication',
+            verificationMethod: didContext.didModel.kid
+          }
+        }
+      };
+
+      console.log(vpToken);
+
+      // 秘密鍵で署名
+      //const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
+      const vpTokenJws = await VerifiableTool.signJws(vpToken.header, vpToken.payload, privateKeyModel?.privateKey);
+
+      const params = new URLSearchParams();
+      params.append('id_token', idTokenJws);
+      params.append('vp_token', vpTokenJws);
+      params.append('state', vpProcess.credentialOffer.payload.state);
+
+      const response = await fetch(vpProcess.credentialOffer.payload.client_id, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-cache',
+        body: params,
+      });
+
+      if (response.status !== 200) {
+        throw Error(await response.text());
+      }
+
+      setStatus(STATUS.SIOP_VP2_VERIFIED);
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || e);
+    };
+
+    setTimeout(() => {
+      nowLoadingContext.setNowLoading(false);
+    }, 300);
+  };
+
   if (status === STATUS.SIOP_VC_RECEIVED) {
     return (
       <Container maxWidth='sm' sx={{ paddingX: '8px' }}>
@@ -623,7 +794,46 @@ export const PageOpenid = () => {
     );
   };
 
-  if (status === STATUS.SIOP_VP_VERIFIED) {
+  if (status === STATUS.SIOP_VP2_CONFIRM) {
+    return (
+      <Container maxWidth='sm' sx={{ paddingX: '8px' }}>
+        <Typography variant='h5' sx={{ marginBottom: '16px' }}>
+          VC提示確認
+        </Typography>
+        <Card variant='outlined'>
+          <CardContent>
+            <Typography sx={{ marginBottom: '16px' }}>
+              提示条件
+            </Typography>
+            <TextField
+              label='input_descriptors'
+              fullWidth
+              multiline
+              maxRows={8}
+              value={JSON.stringify(vpProcess.credentialOffer.payload.presentation_definition.input_descriptors, null, 2)}
+              InputProps={{
+                readOnly: true,
+                sx: {fontSize: '12px'}
+              }}
+            />
+          </CardContent>
+        </Card>
+        <Typography sx={{ marginTop: '16px' }}>
+          
+        </Typography>
+        <Grid container spacing={2} sx={{ marginTop: '16px' }}>
+          <Grid item xs={6}>
+            <Button variant='outlined' fullWidth onClick={() => navigate('/')}>キャンセル</Button>
+          </Grid>
+          <Grid item xs={6}>
+            <Button variant='contained' fullWidth onClick={sendVP2}>提示</Button>
+          </Grid>
+        </Grid>
+      </Container>
+    );
+  };
+
+  if (status === STATUS.SIOP_VP_VERIFIED || status === STATUS.SIOP_VP2_VERIFIED) {
     return (
       <Container maxWidth='sm' sx={{ paddingX: '8px' }}>
         <Typography variant='h5' sx={{ marginBottom: '16px' }}>
