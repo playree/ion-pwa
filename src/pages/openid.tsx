@@ -142,8 +142,8 @@ export const PageOpenid = () => {
     try {
       const query = new URLSearchParams(search);
 
-      //const resToken = await fetch('https://ssird-issuer.com/token', {
-        const resToken = await fetch('https://120d-113-149-183-145.jp.ngrok.io/token', {
+      const resToken = await fetch('https://ssird-issuer.com/token', {
+      //const resToken = await fetch('https://120d-113-149-183-145.jp.ngrok.io/token', {
         method: 'POST',
         mode: 'cors',
         cache: 'no-cache',
@@ -185,8 +185,8 @@ export const PageOpenid = () => {
       const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
       const reqVcJws = await VerifiableTool.signJws(reqVc.header, reqVc.payload, privateKeyModel?.privateKey);
 
-      //const resVc = await fetch('https://ssird-issuer.com/vc', {
-        const resVc = await fetch('https://120d-113-149-183-145.jp.ngrok.io/vc', {
+      const resVc = await fetch('https://ssird-issuer.com/vc', {
+      //const resVc = await fetch('https://120d-113-149-183-145.jp.ngrok.io/vc', {
         method: 'POST',
         mode: 'cors',
         cache: 'no-cache',
