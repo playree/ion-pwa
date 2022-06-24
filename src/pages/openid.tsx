@@ -99,7 +99,7 @@ export const PageOpenid = () => {
         return
       }
       if (requestUrl.indexOf('openidres://vc2/') === 0) {
-        resVc2();
+        resVc2(requestUrl);
         return
       }
     }
@@ -122,7 +122,7 @@ export const PageOpenid = () => {
     url.searchParams.append('client_id', 'xxx');
     url.searchParams.append('scope', 'idToken');
     url.searchParams.append('nonce', 'xxx');
-    url.searchParams.append('redirect_uri', `${window.location.origin}/openid/` + base64url.encode('openidres://vc2/'));
+    url.searchParams.append('redirect_uri', `${window.location.origin}/openid/` + base64url.encode('openidres://vc2/#' + url.origin));
     url.searchParams.append('authorization_details', JSON.stringify({
       'type': 'openid_credential', 
       'credential_type':'https://ssird-issuer.com/nameCard', 
@@ -131,7 +131,7 @@ export const PageOpenid = () => {
     window.location.href = url.toString();
   };
 
-  const resVc2 = async () => {
+  const resVc2 = async (requestUrl: string) => {
     if (!settingsContext.settings) {
       return
     }
@@ -140,10 +140,11 @@ export const PageOpenid = () => {
     }
   
     try {
+      const issuerOrigin = requestUrl.split('#')[1];
+
       const query = new URLSearchParams(search);
 
-      const resToken = await fetch('https://ssird-issuer.com/token', {
-      //const resToken = await fetch('https://120d-113-149-183-145.jp.ngrok.io/token', {
+      const resToken = await fetch(`${issuerOrigin}/token`, {
         method: 'POST',
         mode: 'cors',
         cache: 'no-cache',
@@ -185,8 +186,7 @@ export const PageOpenid = () => {
       const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
       const reqVcJws = await VerifiableTool.signJws(reqVc.header, reqVc.payload, privateKeyModel?.privateKey);
 
-      const resVc = await fetch('https://ssird-issuer.com/vc', {
-      //const resVc = await fetch('https://120d-113-149-183-145.jp.ngrok.io/vc', {
+      const resVc = await fetch(`${issuerOrigin}/vc`, {
         method: 'POST',
         mode: 'cors',
         cache: 'no-cache',
