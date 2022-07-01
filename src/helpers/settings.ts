@@ -3,11 +3,13 @@ import { dexieDb, SettingsModel } from '../dexie';
 export class Settings {
   urlOperation: string;
   urlResolve: string;
+  needChallenge: boolean;
 
   constructor(){
     // デフォルト値
     this.urlOperation = 'https://beta.ion.msidentity.com/api/v1.0/';
     this.urlResolve = 'https://beta.discover.did.microsoft.com/1.0/';
+    this.needChallenge = true;
   }
 
   async load() {
@@ -20,12 +22,17 @@ export class Settings {
     if (dbUrlResolve) {
       this.urlResolve = dbUrlResolve.value;
     }
+    const dbNeedChallenge = await dexieDb.settings.get(SettingsModel.KEYS.NEED_CHALLENGE);
+    if (dbNeedChallenge) {
+      this.needChallenge = dbNeedChallenge.value;
+    }
   }
 
   async save() {
     // indexedDBにSave
     await dexieDb.settings.put(new SettingsModel(SettingsModel.KEYS.URL_OPERATION, this.urlOperation));
     await dexieDb.settings.put(new SettingsModel(SettingsModel.KEYS.URL_RESOLVE, this.urlResolve));
+    await dexieDb.settings.put(new SettingsModel(SettingsModel.KEYS.NEED_CHALLENGE, this.needChallenge));
   }
 
   static async load() {

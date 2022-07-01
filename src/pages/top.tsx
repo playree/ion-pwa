@@ -62,22 +62,29 @@ export const PageTop = () => {
     nowLoadingContext.setNowLoading(true);
     
     // DID発行
-    const didInfo = await DidTool.create(settingsContext.settings.urlOperation, 'sign-primary-key');
+    try {
+      const didInfo = await DidTool.create(settingsContext.settings.urlOperation, settingsContext.settings.needChallenge, 'sign-primary-key');
     
-    if (didInfo) {
-      // 発行した各種情報を保存
-      await PrivateKeyTool.save(didInfo.didModel.signingKeyId, didInfo.signingPrivateKey);
-      await PrivateKeyTool.save(PrivateKeyTool.RESERVE_ID.RECOVERY, didInfo.recoveryPrivateKey);
-      await PrivateKeyTool.save(PrivateKeyTool.RESERVE_ID.UPDATE, didInfo.updatePrivateKey);
-      await DidTool.save(didInfo.didModel);
+      if (didInfo) {
+        // 発行した各種情報を保存
+        await PrivateKeyTool.save(didInfo.didModel.signingKeyId, didInfo.signingPrivateKey);
+        await PrivateKeyTool.save(PrivateKeyTool.RESERVE_ID.RECOVERY, didInfo.recoveryPrivateKey);
+        await PrivateKeyTool.save(PrivateKeyTool.RESERVE_ID.UPDATE, didInfo.updatePrivateKey);
+        await DidTool.save(didInfo.didModel);
 
-      // コンテキストにも反映
-      didContext.setDidModel(didInfo.didModel);
+        // コンテキストにも反映
+        didContext.setDidModel(didInfo.didModel);
+
+        setOpenDidCreated(true);
+      } else {
+        alert('DIDの発行に失敗しました。');
+      }
+    } catch {
+      alert('DIDの発行に失敗しました。');
     }
 
     setTimeout(() => {
       nowLoadingContext.setNowLoading(false);
-      setOpenDidCreated(true);
     }, 300);
   };
 

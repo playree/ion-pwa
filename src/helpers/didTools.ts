@@ -16,7 +16,7 @@ export class DidTool {
     PROOF: 'proof-of-work-challenge',
   };
 
-  static async create(url: string, keyid: string = '') {
+  static async create(url: string, needChallenge: boolean, keyid: string = '') {
     const signingKeyId = keyid ? keyid : VerifiableTool.generateKid();
 
     // 鍵生成
@@ -37,11 +37,16 @@ export class DidTool {
     const longFormDid = IonDid.createLongFormDid(input);
     const longFormSuffixData = longFormDid.substring(longFormDid.lastIndexOf(':') + 1);
 
-    const resText = await IonProofOfWork.submitIonRequest(
-      urljoin(url, DidTool.ACTION_PATH.PROOF),
-      urljoin(url, DidTool.ACTION_PATH.OPERATIONS),
-      JSON.stringify(createRequest)
-    );
+    const resText = needChallenge ? 
+      await IonProofOfWork.submitIonRequest(
+        urljoin(url, DidTool.ACTION_PATH.PROOF),
+        urljoin(url, DidTool.ACTION_PATH.OPERATIONS),
+        JSON.stringify(createRequest)
+      ) :
+      await DidTool._submitIonRequest(
+        urljoin(url, DidTool.ACTION_PATH.OPERATIONS),
+        JSON.stringify(createRequest)
+      );
     if (!resText) {
       return null;
     };
@@ -72,6 +77,33 @@ export class DidTool {
       signingPrivateKey: signingPrivateKey,
       recoveryPrivateKey: recoveryPrivateKey,
       updatePrivateKey: updatePrivateKey,
+    };
+  };
+
+  static async _submitIonRequest(solveChallengeUri: string, requestBody: string) {
+    const response = await fetch(solveChallengeUri, {
+      method: 'POST',
+      mode: 'cors',
+      body: requestBody,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.status >= 500) {
+      console.log(`Unexpected 5xx response: ${await response.text()}`);
+    } else if (response.status >= 400) {
+      // 400 means bad request, so should retry with a new challenge
+      console.log(`Bed request: ${await response.text()}`);
+      console.log('Retrying with new challenge and difficulty');
+    } else if (response.status >= 300) {
+      console.log(`Unexpected 3xx response: ${await response.text()}`);
+    } else {
+      //success
+      console.log(`Successful registration`);
+      const responseText = await response.text();
+      console.log(responseText);
+      return responseText;
     };
   };
 

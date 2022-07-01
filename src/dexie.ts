@@ -17,6 +17,7 @@ export class SettingsModel {
   static KEYS = {
     URL_OPERATION: 'URL_OPERATION',
     URL_RESOLVE: 'URL_RESOLVE',
+    NEED_CHALLENGE: 'NEED_CHALLENGE',
   }
 };
 
